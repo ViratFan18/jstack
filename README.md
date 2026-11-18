@@ -31,7 +31,7 @@ Connect the repository in Cloudflare Pages and use:
 - Node.js: `22.14.0` (pinned in `.nvmrc`; this project was verified with this version)
 - Build environment variable: `VITE_SITE_URL=https://your-real-domain.example` (replace with the exact HTTPS origin assigned to your Pages project or custom domain)
 
-The build requires `VITE_SITE_URL` in Cloudflare Pages and uses it to generate canonical links, `robots.txt`, and `sitemap.xml`. The checked-in `public/_redirects` and `public/_headers` configure the SPA fallback and response security headers. After the first deployment, add your custom domain in Cloudflare, set `VITE_SITE_URL` to that domain, and redeploy.
+The build requires `VITE_SITE_URL` in Cloudflare Pages and uses it to generate canonical links, `robots.txt`, and `sitemap.xml`. The checked-in `public/_headers` configures response security headers. The app does not need a catch-all rewrite: its tool modes use `/` and its About, Guide, Contact, Privacy, and Terms pages are real static files. Unknown paths should return 404.
 
 You can deploy from the Cloudflare dashboard by connecting the Git repository; no backend, database, Wrangler CLI, or server function is required.
 
