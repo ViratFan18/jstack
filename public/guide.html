@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A practical guide to JWT decoding, signing, verification, encryption, JSON validation, and Base64 for developers.">
+  <meta property="og:title" content="JWT and Encoding Guide · JStack">
+  <meta property="og:description" content="Understand token formats, algorithms, JSON syntax checks, and Base64 limitations.">
+  <link rel="stylesheet" href="/policy.css">
+  <title>JWT and Encoding Guide · JStack</title>
+</head>
+<body>
+  <header><a class="brand" href="/">jstack<span>.</span></a><nav><a href="/">Tools</a><a href="/guide.html">Guide</a><a href="/about.html">About</a><a href="/contact.html">Contact</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></nav></header>
+  <main>
+    <div class="eyebrow">JSTACK / DEVELOPER GUIDE</div>
+    <h1>JWT, JSON, and Base64: practical distinctions</h1>
+    <p class="lead">Use the right operation for the job. Encoding changes representation; signing provides integrity; encryption protects content confidentiality.</p>
+    <article>
+      <h2>Decoding a JWT is not verification</h2>
+      <p>A compact signed JWT (JWS) has three dot-separated parts: a JOSE header, a claims payload, and a signature. The first two parts are Base64URL-encoded JSON. Anyone who has the token can usually decode and read those parts. A decoded payload is not proof that the token came from a trusted issuer or has not been changed.</p>
+      <p>To verify a JWS, validate its signature using the expected algorithm and the correct key. Also check the claims your application relies on, such as issuer (`iss`), audience (`aud`), expiration (`exp`), and not-before (`nbf`). A valid signature alone does not grant authorization; your application must still decide whether the subject may perform the requested action.</p>
+    </article>
+    <article>
+      <h2>Symmetric and asymmetric signatures</h2>
+      <p>HMAC algorithms such as HS256 use one shared secret to sign and verify. Every verifier holding that secret can also create signatures, so sharing it expands who can issue tokens. RSA and ECDSA signature schemes use a private key to sign and a public key to verify. Keep private keys secret, and distribute public keys only through channels your system trusts.</p>
+      <p>Choose an algorithm from application configuration rather than trusting an unverified token header to choose arbitrary verification behavior. The JStack workbench restricts each verification call to the algorithm selected in its control.</p>
+    </article>
+    <article>
+      <h2>Signing is different from encryption</h2>
+      <p>A JWS signature detects changes and authenticates a token relative to a trusted key, but it does not hide the header or payload. A JWE is an encrypted token with five compact parts and uses key management plus a content-encryption algorithm. Anyone who needs to read a JWE must have the appropriate decryption key.</p>
+      <p>Encryption does not replace authorization or key management. Use a maintained library, validate supported algorithm/key combinations, protect keys, and avoid sending secrets in URLs or logs.</p>
+    </article>
+    <article>
+      <h2>JSON validation checks syntax, not meaning</h2>
+      <p>Valid JSON follows the JSON grammar: strings use double quotes, object names are quoted, and trailing commas are not permitted. A syntax validator can tell you whether parsing succeeds. It cannot decide whether a field is required, whether a number is in range, or whether the document matches your API contract; use a schema or application-specific validation for those checks.</p>
+    </article>
+    <article>
+      <h2>Base64 is not encryption</h2>
+      <p>Standard Base64 represents bytes with printable characters and padding. It offers no confidentiality and no integrity protection. Use it for transport or text representation only; do not treat an encoded password, token, or key as protected. Base64URL is a related variant with different characters and padding conventions, commonly used inside JWTs.</p>
+    </article>
+    <article>
+      <h2>Use local tools carefully</h2>
+      <p>JStack performs supported operations in the current browser and does not send tool inputs to a JStack application backend. However, the deployed page and its hosting provider remain part of your trust boundary. For production credentials, use a tool whose code and hosting you have reviewed, and independently verify critical results.</p>
+    </article>
+    <p class="notice">Open the <a href="/">JWT workbench</a> or use the <a href="/">JSON and Base64 tools</a>. For security-critical systems, consult your organization's security requirements and standards.</p>
+  </main>
+  <footer><span>JStack · developer tools</span><span><a href="/about.html">About</a><a href="/contact.html">Contact</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></span></footer>
+</body>
+</html>
