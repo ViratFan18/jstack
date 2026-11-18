@@ -12,15 +12,88 @@ type JwtMode = 'Decode' | 'Encode & sign' | 'Verify' | 'Encrypt' | 'Decrypt' | '
 type JsonMode = 'format' | 'minify' | 'validate'
 type Base64Mode = 'encode' | 'decode'
 type Notice = { tone: 'success' | 'warning' | 'error'; title: string; detail: string }
+type ToolRoute = {
+  section: Section
+  title: string
+  description: string
+  heading: string
+  jwtMode?: JwtMode
+  jsonMode?: JsonMode
+  base64Mode?: Base64Mode
+}
 
 const jwtModes: JwtMode[] = ['Decode', 'Encode & sign', 'Verify', 'Encrypt', 'Decrypt', 'Keys']
 const sampleJwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqYXZhLWRldiIsInJvbGUiOiJlbmdpbmVlciIsImlhdCI6MTcwNDA2NzIwMH0.c2FtcGxlLXNpZ25hdHVyZQ'
+const toolRoutes: Record<string, ToolRoute> = {
+  'jwt-decoder': {
+    section: 'jwt', jwtMode: 'Decode', heading: 'JWT decoder',
+    title: 'JWT Decoder Online – Inspect Token Header and Claims | JStack',
+    description: 'Decode a compact JWT in your browser to inspect its header, payload, and signature. Decoding does not verify a token.',
+  },
+  'jwt-encoder': {
+    section: 'jwt', jwtMode: 'Encode & sign', heading: 'JWT encoder and signer',
+    title: 'JWT Encoder Online – Create and Sign JWS Tokens | JStack',
+    description: 'Create and sign a JSON Web Token in your browser with supported JWS algorithms. Your payload and signing key stay local.',
+  },
+  'jwt-verifier': {
+    section: 'jwt', jwtMode: 'Verify', heading: 'JWT signature verifier',
+    title: 'JWT Signature Verifier Online – Verify JWS Locally | JStack',
+    description: 'Verify a JWT signature and registered claims in your browser using a selected algorithm and key. Verification is not authorization.',
+  },
+  'jwe-encryptor': {
+    section: 'jwt', jwtMode: 'Encrypt', heading: 'JWE encryptor',
+    title: 'JWE Encryptor Online – Encrypt a JSON Payload | JStack',
+    description: 'Encrypt a JSON payload as a JWE in your browser with supported RSA-OAEP-256 or direct A256GCM key management.',
+  },
+  'jwe-decryptor': {
+    section: 'jwt', jwtMode: 'Decrypt', heading: 'JWE decryptor',
+    title: 'JWE Decryptor Online – Decrypt a Compact JWE | JStack',
+    description: 'Decrypt a compact JWE locally in your browser with a matching key. Your encrypted token and key are not uploaded.',
+  },
+  'jwt-key-generator': {
+    section: 'jwt', jwtMode: 'Keys', heading: 'JWT key generator',
+    title: 'JWT Key Generator Online – Generate Key Material Locally | JStack',
+    description: 'Generate supported HMAC, RSA, ECDSA, or AES-GCM JWT key material with Web Crypto in your browser.',
+  },
+  'json-formatter': {
+    section: 'json', jsonMode: 'format', heading: 'JSON formatter',
+    title: 'JSON Formatter Online – Format JSON in Your Browser | JStack',
+    description: 'Format and indent JSON locally in your browser. The JStack JSON tool also supports minifying and checking JSON syntax.',
+  },
+  'json-minifier': {
+    section: 'json', jsonMode: 'minify', heading: 'JSON minifier',
+    title: 'JSON Minifier Online – Minify JSON Locally | JStack',
+    description: 'Remove unnecessary whitespace from valid JSON in your browser while preserving its data. No JSON is uploaded.',
+  },
+  'json-validator': {
+    section: 'json', jsonMode: 'validate', heading: 'JSON syntax validator',
+    title: 'JSON Validator Online – Check JSON Syntax | JStack',
+    description: 'Check whether text is syntactically valid JSON in your browser. This tool does not validate schemas or application rules.',
+  },
+  'base64-converter': {
+    section: 'base64', heading: 'Base64 text encoder and decoder',
+    title: 'Base64 Encoder and Decoder Online – UTF-8 Text | JStack',
+    description: 'Encode UTF-8 text as standard Base64 or decode Base64 back to text locally in your browser. Base64 is not encryption.',
+  },
+}
+
+function updateMeta(attribute: 'name' | 'property', key: string, value: string) {
+  let element = document.head.querySelector<HTMLMetaElement>(`meta[${attribute}="${key}"]`)
+  if (!element) {
+    element = document.createElement('meta')
+    element.setAttribute(attribute, key)
+    document.head.append(element)
+  }
+  element.content = value
+}
 
 function App() {
-  const [section, setSection] = useState<Section>('jwt')
-  const [jwtMode, setJwtMode] = useState<JwtMode>('Decode')
-  const [jsonMode, setJsonMode] = useState<JsonMode>('format')
-  const [base64Mode, setBase64Mode] = useState<Base64Mode>('encode')
+  const requestedTool = new URLSearchParams(window.location.search).get('tool')
+  const initialRoute = requestedTool ? toolRoutes[requestedTool] : undefined
+  const [section, setSection] = useState<Section>(initialRoute?.section ?? 'jwt')
+  const [jwtMode, setJwtMode] = useState<JwtMode>(initialRoute?.jwtMode ?? 'Decode')
+  const [jsonMode, setJsonMode] = useState<JsonMode>(initialRoute?.jsonMode ?? 'format')
+  const [base64Mode, setBase64Mode] = useState<Base64Mode>(initialRoute?.base64Mode ?? 'encode')
   const [darkMode, setDarkMode] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [token, setToken] = useState('')
@@ -41,19 +114,44 @@ function App() {
   const [base64Error, setBase64Error] = useState('')
   const [copied, setCopied] = useState(false)
   const jweMode = jwtMode === 'Encrypt' || jwtMode === 'Decrypt'
+  const isHomepage = section === 'jwt' && jwtMode === 'Decode' && !requestedTool
 
   useEffect(() => { document.documentElement.dataset.theme = darkMode ? 'dark' : 'light' }, [darkMode])
   useEffect(() => {
-    const titles: Record<Section, string> = { jwt: 'JWT Workbench', json: 'JSON Tools', base64: 'Base64 Tools', about: 'About' }
-    document.title = `${titles[section]} · JStack`
+    const activeRoute = requestedTool ? toolRoutes[requestedTool] : undefined
+    const routeMatchesState = activeRoute?.section === section
+      && (activeRoute.jwtMode === undefined || activeRoute.jwtMode === jwtMode)
+      && (activeRoute.jsonMode === undefined || activeRoute.jsonMode === jsonMode)
+      && (activeRoute.base64Mode === undefined || activeRoute.base64Mode === base64Mode)
+    const route = routeMatchesState ? activeRoute : undefined
+    const isHome = section === 'jwt' && jwtMode === 'Decode' && !requestedTool
+    const jwtRoute = Object.values(toolRoutes).find((item) => item.section === 'jwt' && item.jwtMode === jwtMode) ?? toolRoutes['jwt-decoder']
+    const jsonRoute = Object.values(toolRoutes).find((item) => item.section === 'json' && item.jsonMode === jsonMode) ?? toolRoutes['json-formatter']
+    const pageTitle = route?.title ?? (isHome
+      ? 'JStack – Free Java Developer Tools, JWT Encoder & Decoder'
+      : section === 'jwt' ? jwtRoute.title
+        : section === 'json' ? jsonRoute.title
+          : section === 'base64' ? toolRoutes['base64-converter'].title : 'About JStack · Browser-Based Developer Tools')
+    const pageDescription = route?.description ?? (isHome
+      ? 'Free browser-based Java and backend developer tools: inspect and sign JWTs, encrypt JWE, format JSON, and convert Base64 text locally.'
+      : section === 'jwt' ? jwtRoute.description
+        : section === 'json' ? jsonRoute.description
+          : section === 'base64' ? toolRoutes['base64-converter'].description : 'Learn about JStack browser-based JWT, JSON, and Base64 developer tools.')
+    document.title = pageTitle
+    updateMeta('name', 'description', pageDescription)
+    updateMeta('property', 'og:title', pageTitle)
+    updateMeta('property', 'og:description', pageDescription)
+    updateMeta('name', 'twitter:title', pageTitle)
+    updateMeta('name', 'twitter:description', pageDescription)
     let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
     if (!canonical) {
       canonical = document.createElement('link')
       canonical.rel = 'canonical'
       document.head.append(canonical)
     }
-    canonical.href = new URL('/', import.meta.env.VITE_SITE_URL || window.location.origin).href
-  }, [section])
+    canonical.href = new URL('/', window.location.origin).href
+    updateMeta('property', 'og:url', canonical.href)
+  }, [section, jwtMode, jsonMode, base64Mode, requestedTool])
 
   const navigate = (next: Section) => { setSection(next); setSidebarOpen(false) }
   const runJwt = async () => {
@@ -163,7 +261,7 @@ function App() {
       {sidebarOpen && <button className="sidebar-scrim" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
       <main className="main-content">
         {section === 'jwt' && <>
-          <div className="page-heading"><div><div className="eyebrow"><span className="eyebrow-mark"><KeyRound size={12} /></span> TOKEN WORKSPACE <span className="eyebrow-separator">/</span> JWS + JWE</div><h1>JWT workbench</h1><p>Inspect, sign, verify and encrypt tokens without sending them anywhere.</p></div><button className="button button-secondary sample-button" onClick={loadExample}><WandSparkles size={15} /> Load example</button></div>
+          <div className="page-heading"><div><div className="eyebrow"><span className="eyebrow-mark"><KeyRound size={12} /></span> TOKEN WORKSPACE <span className="eyebrow-separator">/</span> JWS + JWE</div><h1>{isHomepage ? 'Free Online Java & Backend Developer Tools' : jwtMode === 'Decode' ? 'JWT decoder' : jwtMode === 'Encode & sign' ? 'JWT encoder and signer' : jwtMode === 'Verify' ? 'JWT signature verifier' : jwtMode === 'Encrypt' ? 'JWE encryptor' : jwtMode === 'Decrypt' ? 'JWE decryptor' : 'JWT key generator'}</h1><p>Inspect, sign, verify and encrypt tokens without sending them anywhere.</p></div><button className="button button-secondary sample-button" onClick={loadExample}><WandSparkles size={15} /> Load example</button></div>
           <div className="jwt-tabs" role="tablist" aria-label="JWT operations">{jwtModes.map((mode) => <button key={mode} role="tab" aria-selected={jwtMode === mode} className={jwtMode === mode ? 'active' : ''} onClick={() => { setJwtMode(mode); setNotice(null); setDecoded(null) }}>{mode === 'Encrypt' || mode === 'Decrypt' ? <LockKeyhole size={14} /> : mode === 'Keys' ? <FileKey2 size={14} /> : null}{mode}</button>)}</div>
           <div className="privacy-callout"><LockKeyhole size={15} /><span><b>Local processing.</b> Tokens, keys and payloads stay in this tab and are never uploaded or stored.</span><button title="Operations are performed in your browser." aria-label="About local processing"><CircleHelp size={15} /></button></div>
           <div className="workbench-grid">
@@ -200,7 +298,7 @@ function App() {
           </section>
         </>}
         {section === 'about' && <AboutPage onHome={() => navigate('jwt')} />}
-        <footer className="page-footer"><span>JSTACK <i>·</i> DEVELOPER TOOLS</span><div><a href="/guide.html">Guide</a><a href="/about.html">About</a><a href="/contact.html">Contact</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></div></footer>
+        <footer className="page-footer"><span>JSTACK <i>·</i> DEVELOPER TOOLS</span><div><a href="/jwt-decoder">JWT decoder</a><a href="/jwt-encoder">JWT encoder</a><a href="/jwt-verifier">JWT verifier</a><a href="/jwe-encryptor">JWE encryptor</a><a href="/jwe-decryptor">JWE decryptor</a><a href="/jwt-key-generator">Key generator</a><a href="/json-formatter">JSON formatter</a><a href="/json-minifier">JSON minifier</a><a href="/json-validator">JSON validator</a><a href="/base64-converter">Base64 converter</a><a href="/guide">Guide</a><a href="/about">About</a><a href="/contact">Contact</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></div></footer>
       </main>
     </div>
   </div>

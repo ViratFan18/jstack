@@ -31,7 +31,7 @@ Connect the repository in Cloudflare Pages and use:
 - Node.js: `22.14.0` (pinned in `.nvmrc`; this project was verified with this version)
 - Build environment variable: `VITE_SITE_URL=https://your-real-domain.example` (replace with the exact HTTPS origin assigned to your Pages project or custom domain)
 
-The build requires `VITE_SITE_URL` in Cloudflare Pages and uses it to generate canonical links, `robots.txt`, and `sitemap.xml`. The checked-in `public/_headers` configures response security headers. The app does not need a catch-all rewrite: its tool modes use `/` and its About, Guide, Contact, Privacy, and Terms pages are real static files. Unknown paths should return 404.
+Set `VITE_SITE_URL` in Cloudflare Pages to the exact production HTTPS origin (`https://jstack.pages.dev` for the current Pages site, or your custom domain). The build uses it to generate canonical links, Open Graph metadata, `robots.txt`, and `sitemap.xml`; when the variable is omitted outside Cloudflare, it defaults to the current Pages origin. The tool guides and the About, Guide, Contact, Privacy, and Terms pages are generated or copied as static HTML. Cloudflare Pages serves these files directly, including its clean URLs (for example, `/jwt-decoder`); the interactive workspace remains at `/` and its tool launch links use query parameters. Unknown paths should return 404.
 
 You can deploy from the Cloudflare dashboard by connecting the Git repository; no backend, database, Wrangler CLI, or server function is required.
 
@@ -47,15 +47,15 @@ Both hosts can also deploy the same static build with their CLI. Use the `dist` 
 
 ## Strict Publisher Review
 
-Current status: the AdSense loader for publisher `ca-pub-6808102016344239` is included in every HTML page, and `public/ads.txt` contains the publisher seller record. No ad unit placements, analytics, or consent-management platform are configured. Loading the AdSense library alone does not display ads or establish eligibility. This is not an AdSense approval check; approval and revenue are not guaranteed.
+Current status: the AdSense loader is not included because there are no ad placements; `public/ads.txt` contains the publisher seller record. No analytics or consent-management platform is configured. This is not an AdSense approval check; approval and revenue are not guaranteed.
 
 Before enabling ads or applying, complete these operator-owned steps:
 
-- Set `VITE_SITE_URL` to the real production HTTPS origin and redeploy. Verify canonical links, `/robots.txt`, and `/sitemap.xml` on the deployed domain.
+- Confirm Cloudflare Pages has `VITE_SITE_URL` set to the real production HTTPS origin (`https://jstack.pages.dev` for the current site) and redeploy. Verify canonical links, `/robots.txt`, and `/sitemap.xml` on the deployed domain.
 - Add the operator's legal identity, location/jurisdiction, and any required business/contact disclosures. The supplied email and phone are present, but a phone and email alone do not complete every legal disclosure.
 - Have the Privacy Policy and Terms reviewed for the operator's jurisdiction and actual Cloudflare/account practices; the included pages accurately describe this app's intended code behavior but are not legal advice.
 - Add substantial original material that genuinely helps developers: detailed explanations, supported algorithm/key formats, safe examples, and limitations. A set of utilities alone may not satisfy Google's site-value review.
-- Before creating ad units, configure a Google-certified consent-management platform and consent signaling where required for your audience, and verify ad requests honor those choices.
+- Before enabling advertising, configure a Google-certified consent-management platform and consent signaling where required for your audience, and verify ad requests honor those choices.
 - If analytics or other third-party scripts are added, update the privacy disclosures and CSP in `public/_headers`; verify no sensitive tool input can reach those services.
 - Keep any future ad units clearly labeled and separated from tool controls; never encourage clicks or style ads as navigation or tool controls. The current `ads.txt` record is based on the publisher ID supplied for this project; verify it in the AdSense account before launch.
 - Check the current official AdSense policies and decisions directly. The publisher review is manual and Google controls approval.

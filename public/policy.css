@@ -6,6 +6,7 @@ a { color: #245c4e; }
 .brand span { color: #ed8b6c; }
 nav { display: flex; gap: 18px; font-size: 12px; }
 nav a { text-decoration: none; }
+.tool-links { flex-wrap: wrap; margin-top: 12px; }
 main { max-width: 760px; min-height: calc(100vh - 128px); margin: 0 auto; padding: 56px 22px 64px; }
 .eyebrow { color: #78827d; font: 600 10px/1.4 Consolas, monospace; letter-spacing: .5px; }
 h1 { margin: 12px 0; font-size: clamp(28px, 5vw, 42px); line-height: 1.15; }
