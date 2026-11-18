@@ -244,9 +244,12 @@ const getMetaContent = (html, attribute, key) => {
 
 const files = await readdir(outputDirectory)
 const htmlFiles = files.filter((file) => file.endsWith('.html'))
+const sitemapHtmlFiles = []
 for (const file of htmlFiles) {
   const filePath = join(outputDirectory, file)
   let html = await readFile(filePath, 'utf8')
+  if (html.trim() === `google-site-verification: ${file}`) continue
+  sitemapHtmlFiles.push(file)
   html = html.replace(/\s*<link rel="canonical" href="[^"]*"\s*\/?>/gi, '')
   const pagePath = file === 'index.html' ? '/' : `/${file.replace(/\.html$/i, '')}`
   const canonical = `${siteUrl}${pagePath}`
@@ -279,7 +282,7 @@ for (const file of htmlFiles) {
 
 const robotsPath = join(outputDirectory, 'robots.txt')
 const sitemapPath = join(outputDirectory, 'sitemap.xml')
-const pages = htmlFiles.map((file) => file === 'index.html' ? '/' : `/${file.replace(/\.html$/i, '')}`)
+const pages = sitemapHtmlFiles.map((file) => file === 'index.html' ? '/' : `/${file.replace(/\.html$/i, '')}`)
 const urls = pages.map((page) => `  <url><loc>${siteUrl}${page}</loc></url>`).join('\n')
 await writeFile(sitemapPath, `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`)
 await writeFile(robotsPath, `User-agent: *\nAllow: /\nSitemap: ${siteUrl}/sitemap.xml\n`)
