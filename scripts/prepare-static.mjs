@@ -147,6 +147,20 @@ const toolPages = [
     ],
   },
   {
+    slug: 'json-to-java',
+    name: 'JSON to Java model generator',
+    title: 'JSON to Java Records and POJOs – Local Generator | JStack',
+    description: 'Generate Java records or POJOs from a JSON object in your browser. Infer nested objects, arrays, and nullable reference types without uploading input.',
+    heading: 'Generate Java records and POJOs from JSON',
+    action: 'Generate Java models',
+    sections: [
+      ['Infer a model from a JSON example', 'Paste a representative JSON object and choose a root class name. The generator infers Java field types from the sample; it does not replace an API schema or guarantee that future responses have the same shape.'],
+      ['Nested objects, arrays, and nulls', 'Nested objects become nested Java types, and arrays of objects merge the fields present in their examples. Nullable scalar fields use Java reference types. Empty arrays, null-only values, and incompatible mixed values use Object because the sample does not provide enough information to choose a narrower type.'],
+      ['Records or JavaBeans', 'Record output uses Java records, which require Java 16 or newer. POJO output uses nested static classes with no-argument constructors, getters, and setters. Both styles use wrapper types rather than primitives so fields can be null.'],
+      ['Names and serialization', 'Invalid or reserved Java field names are normalized and made unique. When a Java name differs from its JSON key, the output adds Jackson @JsonProperty; include jackson-annotations in your project to compile those annotations. The generator does not create a package declaration, deserializer, validation rules, or application-specific constructors.'],
+    ],
+  },
+  {
     slug: 'base64-converter',
     name: 'Base64 text converter',
     title: 'Base64 Encoder and Decoder Online – UTF-8 Text | JStack',

@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react'
 import {
-  ArrowLeftRight, ArrowUpDown, BookOpenText, Braces, Check, CircleHelp, Code2, Copy,
+  ArrowLeftRight, ArrowUpDown, Binary, BookOpenText, Braces, Check, CircleHelp, Code2, Copy,
   FileKey2, KeyRound, LockKeyhole, Menu, Moon, RotateCcw, ShieldCheck, Sun,
   TerminalSquare, WandSparkles, X,
 } from 'lucide-react'
 import { JWE_ALGORITHMS, JWS_ALGORITHMS } from './lib/jwt-constants'
+import { generateJavaModel, type JavaModelStyle } from './lib/javaModel'
+import { decodeBase128Text, encodeTextBase128 } from './lib/textBase128'
 import './App.css'
 
-type Section = 'jwt' | 'json' | 'base64' | 'about'
+type Section = 'jwt' | 'json' | 'java' | 'base64' | 'about'
 type JwtMode = 'Decode' | 'Encode & sign' | 'Verify' | 'Encrypt' | 'Decrypt' | 'Keys'
 type JsonMode = 'format' | 'minify' | 'validate'
 type Base64Mode = 'encode' | 'decode'
+type EncodingFormat = 'base64' | 'base128'
 type Notice = { tone: 'success' | 'warning' | 'error'; title: string; detail: string }
 type ToolRoute = {
   section: Section
@@ -20,10 +23,13 @@ type ToolRoute = {
   jwtMode?: JwtMode
   jsonMode?: JsonMode
   base64Mode?: Base64Mode
+  base128Mode?: Base64Mode
+  encodingFormat?: EncodingFormat
 }
 
 const jwtModes: JwtMode[] = ['Decode', 'Encode & sign', 'Verify', 'Encrypt', 'Decrypt', 'Keys']
 const sampleJwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqYXZhLWRldiIsInJvbGUiOiJlbmdpbmVlciIsImlhdCI6MTcwNDA2NzIwMH0.c2FtcGxlLXNpZ25hdHVyZQ'
+const sampleJavaInput = '{\n  "id": 42,\n  "displayName": "Ada Lovelace",\n  "active": true,\n  "address": {\n    "city": "London",\n    "postalCode": "N1"\n  },\n  "roles": ["admin", "author"],\n  "nickname": null\n}'
 const toolRoutes: Record<string, ToolRoute> = {
   'jwt-decoder': {
     section: 'jwt', jwtMode: 'Decode', heading: 'JWT decoder',
@@ -70,10 +76,20 @@ const toolRoutes: Record<string, ToolRoute> = {
     title: 'JSON Validator Online – Check JSON Syntax | JStack',
     description: 'Check whether text is syntactically valid JSON in your browser. This tool does not validate schemas or application rules.',
   },
+  'json-to-java': {
+    section: 'java', heading: 'JSON to Java model generator',
+    title: 'JSON to Java Records and POJOs – Local Generator | JStack',
+    description: 'Generate Java records or POJOs from JSON locally in your browser, including nested objects and arrays.',
+  },
   'base64-converter': {
     section: 'base64', heading: 'Base64 text encoder and decoder',
     title: 'Base64 Encoder and Decoder Online – UTF-8 Text | JStack',
     description: 'Encode UTF-8 text as standard Base64 or decode Base64 back to text locally in your browser. Base64 is not encryption.',
+  },
+  'base128-converter': {
+    section: 'base64', encodingFormat: 'base128', base128Mode: 'encode', heading: 'JStack Base128 encoder and decoder',
+    title: 'JStack Base128 Converter – Custom UTF-8 Text Encoding',
+    description: 'Encode and decode UTF-8 text with JStack’s custom printable Base128 format. It is not a universal Base128 standard.',
   },
 }
 
@@ -94,6 +110,8 @@ function App() {
   const [jwtMode, setJwtMode] = useState<JwtMode>(initialRoute?.jwtMode ?? 'Decode')
   const [jsonMode, setJsonMode] = useState<JsonMode>(initialRoute?.jsonMode ?? 'format')
   const [base64Mode, setBase64Mode] = useState<Base64Mode>(initialRoute?.base64Mode ?? 'encode')
+  const [base128Mode, setBase128Mode] = useState<Base64Mode>(initialRoute?.base128Mode ?? 'encode')
+  const [encodingFormat, setEncodingFormat] = useState<EncodingFormat>(initialRoute?.encodingFormat ?? 'base64')
   const [darkMode, setDarkMode] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [token, setToken] = useState('')
@@ -109,9 +127,17 @@ function App() {
   const [converterInput, setConverterInput] = useState('{\n  "id": 42,\n  "displayName": "Ada Lovelace",\n  "active": true,\n  "address": {\n    "city": "London",\n    "postalCode": "N1"\n  },\n  "roles": ["admin", "author"]\n}')
   const [converterOutput, setConverterOutput] = useState('')
   const [converterError, setConverterError] = useState('')
+  const [javaInput, setJavaInput] = useState(sampleJavaInput)
+  const [javaOutput, setJavaOutput] = useState('')
+  const [javaError, setJavaError] = useState('')
+  const [javaClassName, setJavaClassName] = useState('User')
+  const [javaStyle, setJavaStyle] = useState<JavaModelStyle>('record')
   const [base64Input, setBase64Input] = useState('Java developers, welcome!')
   const [base64Output, setBase64Output] = useState('')
   const [base64Error, setBase64Error] = useState('')
+  const [base128Input, setBase128Input] = useState('Java developers, welcome!')
+  const [base128Output, setBase128Output] = useState('')
+  const [base128Error, setBase128Error] = useState('')
   const [copied, setCopied] = useState(false)
   const jweMode = jwtMode === 'Encrypt' || jwtMode === 'Decrypt'
   const isHomepage = section === 'jwt' && jwtMode === 'Decode' && !requestedTool
@@ -123,20 +149,27 @@ function App() {
       && (activeRoute.jwtMode === undefined || activeRoute.jwtMode === jwtMode)
       && (activeRoute.jsonMode === undefined || activeRoute.jsonMode === jsonMode)
       && (activeRoute.base64Mode === undefined || activeRoute.base64Mode === base64Mode)
+      && (activeRoute.base128Mode === undefined || activeRoute.base128Mode === base128Mode)
+      && (activeRoute.encodingFormat === undefined || activeRoute.encodingFormat === encodingFormat)
     const route = routeMatchesState ? activeRoute : undefined
     const isHome = section === 'jwt' && jwtMode === 'Decode' && !requestedTool
     const jwtRoute = Object.values(toolRoutes).find((item) => item.section === 'jwt' && item.jwtMode === jwtMode) ?? toolRoutes['jwt-decoder']
     const jsonRoute = Object.values(toolRoutes).find((item) => item.section === 'json' && item.jsonMode === jsonMode) ?? toolRoutes['json-formatter']
+    const javaRoute = toolRoutes['json-to-java']
     const pageTitle = route?.title ?? (isHome
       ? 'JStack – Free Java Developer Tools, JWT Encoder & Decoder'
       : section === 'jwt' ? jwtRoute.title
         : section === 'json' ? jsonRoute.title
-          : section === 'base64' ? toolRoutes['base64-converter'].title : 'About JStack · Browser-Based Developer Tools')
+        : section === 'base64' ? (encodingFormat === 'base128' ? toolRoutes['base128-converter'].title : toolRoutes['base64-converter'].title)
+          : section === 'java' ? javaRoute.title
+          : 'About JStack · Browser-Based Developer Tools')
     const pageDescription = route?.description ?? (isHome
-      ? 'Free browser-based Java and backend developer tools: inspect and sign JWTs, encrypt JWE, format JSON, and convert Base64 text locally.'
+      ? 'Free browser-based Java and backend developer tools: inspect JWTs, format JSON, generate Java models, and convert text locally.'
       : section === 'jwt' ? jwtRoute.description
         : section === 'json' ? jsonRoute.description
-          : section === 'base64' ? toolRoutes['base64-converter'].description : 'Learn about JStack browser-based JWT, JSON, and Base64 developer tools.')
+        : section === 'base64' ? (encodingFormat === 'base128' ? toolRoutes['base128-converter'].description : toolRoutes['base64-converter'].description)
+          : section === 'java' ? javaRoute.description
+          : 'Learn about JStack browser-based JWT, JSON-to-Java, Base64, and JStack Base128 developer tools.')
     document.title = pageTitle
     updateMeta('name', 'description', pageDescription)
     updateMeta('property', 'og:title', pageTitle)
@@ -151,7 +184,7 @@ function App() {
     }
     canonical.href = new URL('/', window.location.origin).href
     updateMeta('property', 'og:url', canonical.href)
-  }, [section, jwtMode, jsonMode, base64Mode, requestedTool])
+  }, [section, jwtMode, jsonMode, base64Mode, base128Mode, encodingFormat, requestedTool])
 
   const navigate = (next: Section) => { setSection(next); setSidebarOpen(false) }
   const runJwt = async () => {
@@ -205,6 +238,16 @@ function App() {
     } catch (error) { setConverterOutput(''); setConverterError(error instanceof Error ? error.message : 'Could not convert this input.') }
   }
 
+  const runJavaModel = () => {
+    setJavaError('')
+    try {
+      setJavaOutput(generateJavaModel(javaInput, { className: javaClassName, style: javaStyle }))
+    } catch (error) {
+      setJavaOutput('')
+      setJavaError(error instanceof Error ? error.message : 'Could not generate a Java model.')
+    }
+  }
+
   const runBase64 = async () => {
     setBase64Error('')
     try {
@@ -218,6 +261,16 @@ function App() {
     }
   }
 
+  const runBase128 = () => {
+    setBase128Error('')
+    try {
+      setBase128Output(base128Mode === 'encode' ? encodeTextBase128(base128Input) : decodeBase128Text(base128Input))
+    } catch (error) {
+      setBase128Output('')
+      setBase128Error(error instanceof Error ? error.message : 'Could not process this Base128 input.')
+    }
+  }
+
   const copyText = async (value: string) => {
     if (!value) return
     await navigator.clipboard.writeText(value)
@@ -226,7 +279,20 @@ function App() {
 
   const loadExample = () => {
     if (section === 'jwt') { setToken(sampleJwt); setJwtMode('Decode'); return }
+    if (section === 'java') {
+      setJavaInput(sampleJavaInput)
+      setJavaOutput('')
+      setJavaError('')
+      return
+    }
     if (section === 'base64') {
+      if (encodingFormat === 'base128') {
+        const example = 'JStack ✓'
+        setBase128Input(base128Mode === 'encode' ? example : encodeTextBase128(example))
+        setBase128Output('')
+        setBase128Error('')
+        return
+      }
       setBase64Input(base64Mode === 'encode' ? 'Java developers, welcome!' : 'SGVsbG8gV29ybGQh')
       setBase64Output('')
       setBase64Error('')
@@ -235,6 +301,44 @@ function App() {
     setConverterInput('{\n  "id": 42,\n  "displayName": "Ada Lovelace",\n  "active": true,\n  "roles": ["admin", "author"]\n}')
     setConverterOutput('')
     setConverterError('')
+  }
+
+  const encodingMode = encodingFormat === 'base64' ? base64Mode : base128Mode
+  const encodingInput = encodingFormat === 'base64' ? base64Input : base128Input
+  const encodingOutput = encodingFormat === 'base64' ? base64Output : base128Output
+  const encodingError = encodingFormat === 'base64' ? base64Error : base128Error
+  const setEncodingInput = (value: string) => {
+    if (encodingFormat === 'base64') setBase64Input(value)
+    else setBase128Input(value)
+  }
+  const setEncodingMode = (mode: Base64Mode) => {
+    if (encodingFormat === 'base64') {
+      setBase64Mode(mode)
+      setBase64Output('')
+      setBase64Error('')
+    } else {
+      setBase128Mode(mode)
+      setBase128Output('')
+      setBase128Error('')
+    }
+  }
+  const clearEncoding = () => {
+    setEncodingInput('')
+    if (encodingFormat === 'base64') {
+      setBase64Output('')
+      setBase64Error('')
+    } else {
+      setBase128Output('')
+      setBase128Error('')
+    }
+  }
+  const resetEncodingOutput = () => {
+    if (encodingFormat === 'base64') setBase64Output('')
+    else setBase128Output('')
+  }
+  const runEncoding = () => {
+    if (encodingFormat === 'base64') void runBase64()
+    else runBase128()
   }
 
   return <div className="app-shell">
@@ -246,17 +350,20 @@ function App() {
     </header>
     <div className="app-body">
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
-        <div className="sidebar-topline"><span>WORKSPACE</span><span className="sidebar-activity"><i /> LIVE</span></div>
+        <div className="sidebar-topline"><span className="sidebar-workspace-label">TOOLBOX</span><span className="sidebar-activity"><i /> LOCAL</span></div>
         <nav aria-label="Main navigation">
-          <p className="nav-caption">TOKEN TOOLS</p>
-          <button className={`nav-item ${section === 'jwt' ? 'active' : ''}`} onClick={() => navigate('jwt')}><ShieldCheck size={17} /><span>JWT workbench</span><span className="nav-hotkey">01</span></button>
-          <p className="nav-caption nav-caption-spaced">TEXT TOOLS</p>
-          <button className={`nav-item ${section === 'base64' ? 'active' : ''}`} onClick={() => navigate('base64')}><ArrowUpDown size={17} /><span>Base64 encode / decode</span></button>
-          <p className="nav-caption nav-caption-spaced">JAVA TOOLKIT</p>
-          <button className={`nav-item ${section === 'json' ? 'active' : ''}`} onClick={() => navigate('json')}><Braces size={17} /><span>JSON tools</span><span className="nav-count">03</span></button>
-          <button className={`nav-item ${section === 'about' ? 'active' : ''}`} onClick={() => navigate('about')}><BookOpenText size={17} /><span>About & policies</span></button>
+          <p className="nav-caption">SECURITY</p>
+          <button className={`nav-item ${section === 'jwt' ? 'active' : ''}`} onClick={() => navigate('jwt')}><span className="nav-icon"><ShieldCheck size={17} /></span><span className="nav-item-copy"><b>JWT Workbench</b></span></button>
+          <p className="nav-caption nav-caption-spaced">ENCODING</p>
+          <button className={`nav-item ${section === 'base64' ? 'active' : ''}`} onClick={() => navigate('base64')}><span className="nav-icon"><ArrowUpDown size={17} /></span><span className="nav-item-copy"><b>Base64 / 128</b></span></button>
+          <p className="nav-caption nav-caption-spaced">FORMATTING</p>
+          <button className={`nav-item ${section === 'json' ? 'active' : ''}`} onClick={() => navigate('json')}><span className="nav-icon"><Braces size={17} /></span><span className="nav-item-copy"><b>JSON Studio</b></span></button>
+          <p className="nav-caption nav-caption-spaced">JAVA</p>
+          <button className={`nav-item ${section === 'java' ? 'active' : ''}`} onClick={() => navigate('java')}><span className="nav-icon"><Code2 size={17} /></span><span className="nav-item-copy"><b>JSON to Java</b></span></button>
+          <p className="nav-caption nav-caption-spaced">INFO</p>
+          <button className={`nav-item nav-item-about ${section === 'about' ? 'active' : ''}`} onClick={() => navigate('about')}><span className="nav-icon"><BookOpenText size={17} /></span><span className="nav-item-copy"><b>About</b></span><span className="nav-arrow">↗</span></button>
         </nav>
-        <div className="sidebar-bottom"><div className="privacy-mini"><LockKeyhole size={15} /><span><b>Private by design</b><small>Your inputs stay in this browser.</small></span></div><div className="sidebar-foot">JSTACK TOOLKIT <span>v1.0</span></div></div>
+        <div className="sidebar-bottom"><div className="privacy-mini"><span className="privacy-shield"><LockKeyhole size={15} /></span><span className="privacy-copy"><b>LOCAL ONLY</b><small>Inputs stay here.</small></span><span className="privacy-indicator" aria-hidden="true" /></div><div className="sidebar-foot"><span>JSTACK</span><span className="sidebar-version">v1.0</span></div></div>
       </aside>
       {sidebarOpen && <button className="sidebar-scrim" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
       <main className="main-content">
@@ -284,24 +391,68 @@ function App() {
         {section === 'json' && <>
           <div className="page-heading converter-heading"><div><div className="eyebrow"><span className="eyebrow-mark"><Braces size={12} /></span> DEVELOPER TOOLS <span className="eyebrow-separator">/</span> JSON</div><h1>JSON tools</h1><p>Format, minify, or validate JSON locally in your browser.</p></div><button className="button button-secondary sample-button" onClick={loadExample}><WandSparkles size={15} /> Load example</button></div>
           <section className="converter-workspace json-workspace"><div className="converter-toolbar"><div className="converter-title"><span className="converter-title-icon"><Braces size={17} /></span><div><b>JSON formatter & validator</b><small>Client-side · no data uploaded</small></div></div><div className="json-mode-tabs" role="tablist" aria-label="JSON operation">{(['format', 'minify', 'validate'] as const).map((mode) => <button key={mode} role="tab" aria-selected={jsonMode === mode} className={jsonMode === mode ? 'active' : ''} onClick={() => { setJsonMode(mode); setConverterOutput(''); setConverterError('') }}>{mode}</button>)}</div></div>
-            <div className="converter-editors"><div className="converter-pane"><div className="pane-heading"><label htmlFor="converter-input">JSON INPUT</label><button onClick={() => { setConverterInput(''); setConverterOutput(''); setConverterError('') }}><X size={13} /> Clear</button></div><textarea id="converter-input" className="code-editor converter-editor" value={converterInput} onChange={(event) => setConverterInput(event.target.value)} placeholder="Paste JSON here…" spellCheck={false} /><div className="pane-footer"><span>{converterInput.length} characters</span><button onClick={loadExample}><WandSparkles size={12} /> Example</button></div></div>
-              <div className="converter-actions"><button className="convert-button" onClick={() => void runConverter()} aria-label={`Run JSON ${jsonMode}`}><ArrowLeftRight size={17} /></button><button className="convert-text-button" onClick={() => void runConverter()}>{jsonMode === 'format' ? 'Format JSON' : jsonMode === 'minify' ? 'Minify JSON' : 'Validate JSON'} <span>⌘ ↵</span></button></div>
-              <div className="converter-pane output-pane"><div className="pane-heading"><span>{jsonMode === 'validate' ? 'VALIDATION' : 'OUTPUT'}</span><button disabled={!converterOutput} onClick={() => void copyText(converterOutput)}>{copied ? <Check size={13} /> : <Copy size={13} />}{copied ? 'Copied' : 'Copy'}</button></div>{converterError ? <div className="converter-error"><X size={15} />{converterError}</div> : converterOutput ? <pre className={`code-editor converter-output ${jsonMode === 'validate' ? 'validation-output' : ''}`}>{converterOutput}</pre> : <div className="output-placeholder"><span><TerminalSquare size={18} /></span><b>Output appears here</b><small>{jsonMode === 'validate' ? 'JSON validity will be reported here' : 'Your input is processed locally'}</small></div>}<div className="pane-footer"><span>{converterOutput ? `${converterOutput.length} characters` : 'Waiting for input'}</span><button onClick={() => setConverterOutput('')}><RotateCcw size={12} /> Reset</button></div></div></div>
+            <div className="converter-editors"><div className="converter-pane"><div className="pane-heading"><label htmlFor="converter-input">JSON INPUT</label><button onClick={() => { setConverterInput(''); setConverterOutput(''); setConverterError('') }}><X size={13} /> Clear</button></div><textarea id="converter-input" className="code-editor converter-editor" value={converterInput} onChange={(event) => setConverterInput(event.target.value)} onKeyDown={(event) => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); void runConverter() } }} placeholder="Paste JSON here…" spellCheck={false} /><div className="pane-footer"><span>{converterInput.length} characters</span><button onClick={loadExample}><WandSparkles size={12} /> Example</button></div></div>
+              <div className="converter-actions"><button className="convert-button" onClick={() => void runConverter()} aria-label={`Run JSON ${jsonMode}`}><ArrowLeftRight size={17} /></button><button className="convert-text-button" onClick={() => void runConverter()}>{jsonMode === 'format' ? 'Format JSON' : jsonMode === 'minify' ? 'Minify JSON' : 'Validate JSON'} <span>Ctrl / ⌘ ↵</span></button></div>
+              <div className="converter-pane output-pane" aria-live="polite"><div className="pane-heading"><span>{jsonMode === 'validate' ? 'VALIDATION' : 'OUTPUT'}</span><button disabled={!converterOutput} onClick={() => void copyText(converterOutput)}>{copied ? <Check size={13} /> : <Copy size={13} />}{copied ? 'Copied' : 'Copy'}</button></div>{converterError ? <div className="converter-error" role="alert"><X size={15} />{converterError}</div> : converterOutput ? <pre className={`code-editor converter-output ${jsonMode === 'validate' ? 'validation-output' : ''}`}>{converterOutput}</pre> : <div className="output-placeholder"><span><TerminalSquare size={18} /></span><b>Output appears here</b><small>{jsonMode === 'validate' ? 'JSON validity will be reported here' : 'Your input is processed locally'}</small></div>}<div className="pane-footer"><span>{converterOutput ? `${converterOutput.length} characters` : 'Waiting for input'}</span><button onClick={() => setConverterOutput('')}><RotateCcw size={12} /> Reset</button></div></div></div>
           </section>
+        </>}
+        {section === 'java' && <>
+          <div className="page-heading converter-heading"><div><div className="eyebrow"><span className="eyebrow-mark"><Code2 size={12} /></span> BACKEND WORKFLOWS <span className="eyebrow-separator">/</span> JAVA</div><h1>JSON to Java models</h1><p>Generate nested Java records or POJOs from a JSON object, entirely in your browser.</p></div><button className="button button-secondary sample-button" onClick={loadExample}><WandSparkles size={15} /> Load example</button></div>
+          <section className="converter-workspace json-workspace java-workspace">
+            <div className="converter-toolbar java-toolbar">
+              <div className="converter-title"><span className="converter-title-icon"><Code2 size={17} /></span><div><b>Java model generator</b><small>Client-side · no data uploaded</small></div></div>
+              <div className="java-controls">
+                <label htmlFor="java-class-name">Root class <input id="java-class-name" className="java-class-input" value={javaClassName} onChange={(event) => { setJavaClassName(event.target.value); setJavaOutput(''); setJavaError('') }} /></label>
+                <div className="json-mode-tabs" role="tablist" aria-label="Java model style">
+                  {(['record', 'pojo'] as const).map((style) => <button key={style} role="tab" aria-selected={javaStyle === style} className={javaStyle === style ? 'active' : ''} onClick={() => { setJavaStyle(style); setJavaOutput(''); setJavaError('') }}>{style === 'record' ? 'Record' : 'POJO'}</button>)}
+                </div>
+              </div>
+            </div>
+            <div className="converter-editors">
+              <div className="converter-pane">
+                <div className="pane-heading"><label htmlFor="java-json-input">JSON INPUT</label><button onClick={() => { setJavaInput(''); setJavaOutput(''); setJavaError('') }}><X size={13} /> Clear</button></div>
+                <textarea id="java-json-input" className="code-editor converter-editor" value={javaInput} onChange={(event) => setJavaInput(event.target.value)} onKeyDown={(event) => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); runJavaModel() } }} placeholder="Paste a JSON object here…" spellCheck={false} />
+                <div className="pane-footer"><span>{javaInput.length} characters</span><button onClick={loadExample}><WandSparkles size={12} /> Example</button></div>
+              </div>
+              <div className="converter-actions"><button className="convert-button" onClick={runJavaModel} aria-label="Generate Java model"><ArrowLeftRight size={17} /></button><button className="convert-text-button" onClick={runJavaModel}>Generate Java <span>Ctrl / ⌘ ↵</span></button></div>
+              <div className="converter-pane output-pane" aria-live="polite">
+                <div className="pane-heading"><span>JAVA SOURCE</span><button disabled={!javaOutput} onClick={() => void copyText(javaOutput)}>{copied ? <Check size={13} /> : <Copy size={13} />}{copied ? 'Copied' : 'Copy'}</button></div>
+                {javaError ? <div className="converter-error" role="alert"><X size={15} />{javaError}</div> : javaOutput ? <pre className="code-editor converter-output java-output" tabIndex={0} aria-label="Generated Java source">{javaOutput}</pre> : <div className="output-placeholder"><span><TerminalSquare size={18} /></span><b>Java source appears here</b><small>Paste a JSON object and generate a model</small></div>}
+                <div className="pane-footer"><span>{javaOutput ? `${javaOutput.length} characters` : 'Waiting for input'}</span><button onClick={() => { setJavaOutput(''); setJavaError('') }}><RotateCcw size={12} /> Reset</button></div>
+              </div>
+            </div>
+          </section>
+          <div className="java-note"><CircleHelp size={15} /><span><b>Output notes.</b> Nullable fields use reference types; empty or mixed values use <code>Object</code>. Records require Java 16 or newer. Renamed JSON keys add Jackson <code>@JsonProperty</code> annotations and require <code>jackson-annotations</code>.</span></div>
         </>}
         {section === 'base64' && <>
-          <div className="page-heading converter-heading"><div><div className="eyebrow"><span className="eyebrow-mark"><ArrowUpDown size={12} /></span> TEXT TOOLS <span className="eyebrow-separator">/</span> BASE64</div><h1>Base64 encode & decode</h1><p>Convert plain UTF-8 text to standard Base64 and back. This is encoding, not encryption.</p></div><button className="button button-secondary sample-button" onClick={loadExample}><WandSparkles size={15} /> Load example</button></div>
-          <section className="converter-workspace json-workspace"><div className="converter-toolbar"><div className="converter-title"><span className="converter-title-icon"><ArrowUpDown size={17} /></span><div><b>Text Base64 converter</b><small>Client-side · no data uploaded</small></div></div><div className="json-mode-tabs" role="tablist" aria-label="Base64 operation">{(['encode', 'decode'] as const).map((mode) => <button key={mode} role="tab" aria-selected={base64Mode === mode} className={base64Mode === mode ? 'active' : ''} onClick={() => { setBase64Mode(mode); setBase64Output(''); setBase64Error('') }}>{mode}</button>)}</div></div>
-            <div className="converter-editors"><div className="converter-pane"><div className="pane-heading"><label htmlFor="base64-input">{base64Mode === 'encode' ? 'PLAIN TEXT' : 'BASE64 INPUT'}</label><button onClick={() => { setBase64Input(''); setBase64Output(''); setBase64Error('') }}><X size={13} /> Clear</button></div><textarea id="base64-input" className="code-editor converter-editor" value={base64Input} onChange={(event) => setBase64Input(event.target.value)} placeholder={base64Mode === 'encode' ? 'Type or paste plain text…' : 'Paste standard Base64…'} spellCheck={false} /><div className="pane-footer"><span>{base64Input.length} characters</span><button onClick={loadExample}><WandSparkles size={12} /> Example</button></div></div>
-              <div className="converter-actions"><button className="convert-button" onClick={() => void runBase64()} aria-label={`Run Base64 ${base64Mode}`}><ArrowLeftRight size={17} /></button><button className="convert-text-button" onClick={() => void runBase64()}>{base64Mode === 'encode' ? 'Encode to Base64' : 'Decode Base64'} <span>⌘ ↵</span></button></div>
-              <div className="converter-pane output-pane"><div className="pane-heading"><span>OUTPUT</span><button disabled={!base64Output} onClick={() => void copyText(base64Output)}>{copied ? <Check size={13} /> : <Copy size={13} />}{copied ? 'Copied' : 'Copy'}</button></div>{base64Error ? <div className="converter-error"><X size={15} />{base64Error}</div> : base64Output ? <pre className="code-editor converter-output">{base64Output}</pre> : <div className="output-placeholder"><span><TerminalSquare size={18} /></span><b>Output appears here</b><small>Plain text and standard Base64 only</small></div>}<div className="pane-footer"><span>{base64Output ? `${base64Output.length} characters` : 'Waiting for input'}</span><button onClick={() => setBase64Output('')}><RotateCcw size={12} /> Reset</button></div></div></div>
+          <div className="page-heading converter-heading"><div><div className="eyebrow"><span className="eyebrow-mark"><ArrowUpDown size={12} /></span> TEXT TOOLS <span className="eyebrow-separator">/</span> ENCODING</div><h1>{encodingFormat === 'base64' ? 'Base64 converter' : 'JStack Base128'}</h1><p>{encodingFormat === 'base64' ? 'Encode or decode UTF-8 text with standard Base64.' : 'Encode or decode UTF-8 text with JStack’s custom printable 7-bit format.'}</p></div><button className="button button-secondary sample-button" onClick={loadExample}><WandSparkles size={15} /> Load example</button></div>
+          <div className="encoding-format-switch" role="tablist" aria-label="Encoding format">
+            <button role="tab" aria-selected={encodingFormat === 'base64'} className={encodingFormat === 'base64' ? 'active' : ''} onClick={() => setEncodingFormat('base64')}><span className="encoding-format-icon"><ArrowUpDown size={17} /></span><span><b>Base64</b><small>Standard format</small></span></button>
+            <button role="tab" aria-selected={encodingFormat === 'base128'} className={encodingFormat === 'base128' ? 'active' : ''} onClick={() => setEncodingFormat('base128')}><span className="encoding-format-icon"><Binary size={17} /></span><span><b>Base128</b><small>JStack custom</small></span></button>
+          </div>
+          <section className="converter-workspace json-workspace"><div className="converter-toolbar"><div className="converter-title"><span className="converter-title-icon">{encodingFormat === 'base64' ? <ArrowUpDown size={17} /> : <Binary size={17} />}</span><div><b>{encodingFormat === 'base64' ? 'Base64 text converter' : 'JStack Base128 converter'}</b><small>Client-side · no data uploaded</small></div></div><div className="json-mode-tabs" role="tablist" aria-label={`${encodingFormat} operation`}>{(['encode', 'decode'] as const).map((mode) => <button key={mode} role="tab" aria-selected={encodingMode === mode} className={encodingMode === mode ? 'active' : ''} onClick={() => setEncodingMode(mode)}>{mode}</button>)}</div></div>
+            <div className="converter-editors"><div className="converter-pane"><div className="pane-heading"><label htmlFor={encodingFormat === 'base64' ? 'base64-input' : 'base128-input'}>{encodingMode === 'encode' ? 'PLAIN TEXT' : `${encodingFormat.toUpperCase()} INPUT`}</label><button onClick={clearEncoding}><X size={13} /> Clear</button></div><textarea id={encodingFormat === 'base64' ? 'base64-input' : 'base128-input'} className="code-editor converter-editor" value={encodingInput} onChange={(event) => setEncodingInput(event.target.value)} onKeyDown={(event) => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); runEncoding() } }} placeholder={encodingMode === 'encode' ? 'Type or paste plain text…' : encodingFormat === 'base64' ? 'Paste standard Base64…' : 'Paste JStack Base128 Braille text…'} spellCheck={false} /><div className="pane-footer"><span>{encodingInput.length} characters</span><button onClick={loadExample}><WandSparkles size={12} /> Example</button></div></div>
+              <div className="converter-actions"><button className="convert-button" onClick={runEncoding} aria-label={`Run ${encodingFormat} ${encodingMode}`}><ArrowLeftRight size={17} /></button><button className="convert-text-button" onClick={runEncoding}>{encodingMode === 'encode' ? `Encode to ${encodingFormat === 'base64' ? 'Base64' : 'Base128'}` : `Decode ${encodingFormat === 'base64' ? 'Base64' : 'Base128'}`} <span>Ctrl / ⌘ ↵</span></button></div>
+              <div className="converter-pane output-pane"><div className="pane-heading"><span>OUTPUT</span><button disabled={!encodingOutput} onClick={() => void copyText(encodingOutput)}>{copied ? <Check size={13} /> : <Copy size={13} />}{copied ? 'Copied' : 'Copy'}</button></div>{encodingError ? <div className="converter-error"><X size={15} />{encodingError}</div> : encodingOutput ? <pre className="code-editor converter-output">{encodingOutput}</pre> : <div className="output-placeholder"><span><TerminalSquare size={18} /></span><b>Output appears here</b><small>{encodingFormat === 'base64' ? 'Standard Base64 output' : 'JStack’s printable Braille alphabet'}</small></div>}<div className="pane-footer"><span>{encodingOutput ? `${encodingOutput.length} characters` : 'Waiting for input'}</span><button onClick={resetEncodingOutput}><RotateCcw size={12} /> Reset</button></div></div></div>
           </section>
+          {encodingFormat === 'base128' && <div className="java-note date-note"><CircleHelp size={15} /><span>JStack Base128 is custom, not a universal standard. Use it only with a decoder using the same mapping (U+2801–U+2880).</span></div>}
         </>}
         {section === 'about' && <AboutPage onHome={() => navigate('jwt')} />}
-        <footer className="page-footer"><span>JSTACK <i>·</i> DEVELOPER TOOLS</span><div><a href="/jwt-decoder">JWT decoder</a><a href="/jwt-encoder">JWT encoder</a><a href="/jwt-verifier">JWT verifier</a><a href="/jwe-encryptor">JWE encryptor</a><a href="/jwe-decryptor">JWE decryptor</a><a href="/jwt-key-generator">Key generator</a><a href="/json-formatter">JSON formatter</a><a href="/json-minifier">JSON minifier</a><a href="/json-validator">JSON validator</a><a href="/base64-converter">Base64 converter</a><a href="/guide">Guide</a><a href="/about">About</a><a href="/contact">Contact</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></div></footer>
+        <AdSlot />
+        <footer className="page-footer"><span>JSTACK <i>·</i> DEVELOPER TOOLS</span><div><a href="/guide">Guide</a><a href="/about">About</a><a href="/contact">Contact</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></div></footer>
       </main>
     </div>
   </div>
+}
+
+function AdSlot() {
+  return <aside id="ad-slot-responsive" className="ad-slot" aria-label="Advertisement" data-ad-placement="below-tools">
+    <span className="ad-slot-label">ADVERTISEMENT</span>
+    {import.meta.env.DEV && <div className="ad-slot-preview" aria-hidden="true">
+      <span>Responsive ad placement</span>
+      <small>AdSense publisher and slot IDs required before launch</small>
+    </div>}
+  </aside>
 }
 
 function JsonPanel({ title, value, accent }: { title: string; value: Record<string, unknown>; accent: 'lime' | 'blue' }) {
@@ -316,7 +467,7 @@ function KeyGenerator({ onGenerate }: { onGenerate: (algorithm: string) => Promi
 }
 
 function AboutPage({ onHome }: { onHome: () => void }) {
-  return <div className="info-page about-page"><div className="eyebrow"><span className="eyebrow-mark"><BookOpenText size={12} /></span> ABOUT <span className="eyebrow-separator">/</span> PRIVACY</div><h1>JWT and data tools for developers.</h1><p className="info-intro">JStack brings a JWT/JWE workbench, JSON formatter/minifier/validator, and standard Base64 text converter together in one browser-based workspace.</p><div className="about-grid"><article><span><LockKeyhole size={17} /></span><h2>Privacy</h2><p>Tool inputs are processed in your browser and are not sent to a JStack application backend or stored in local storage. The hosting provider still processes normal web requests. <a href="/privacy.html">Read the privacy policy</a></p></article><article><span><ShieldCheck size={17} /></span><h2>JWT security</h2><p>Decoding only reveals content; it does not verify signatures. Verification does not make an authorization decision. A signed JWT is not encrypted.</p></article><article><span><Braces size={17} /></span><h2>Data formats</h2><p>JSON validation checks syntax, not a schema. Standard Base64 encodes text and is not encryption. Base64URL is a separate format. <a href="/guide.html">Read the developer guide</a></p></article><article><span><CircleHelp size={17} /></span><h2>Contact</h2><p><a href="mailto:shaikmukhuran@gmail.com">shaikmukhuran@gmail.com</a><br /><a href="tel:+17207521486">720-752-1486</a></p></article></div><div className="policy-disclaimer"><b>Contact and legal information</b><p>Review the <a href="/terms.html">Terms of Use</a> and <a href="/privacy.html">Privacy Policy</a> for the hosting and data practices that apply to the deployed site.</p></div><button className="button button-secondary back-tool" onClick={onHome}><ArrowLeftRight size={14} /> Tool workspace</button></div>
+  return <div className="info-page about-page"><div className="eyebrow"><span className="eyebrow-mark"><BookOpenText size={12} /></span> ABOUT <span className="eyebrow-separator">/</span> PRIVACY</div><h1>JWT and data tools for developers.</h1><p className="info-intro">JStack brings a JWT/JWE workbench, JSON formatter/minifier/validator, JSON-to-Java model generator, and Base64 and custom Base128 text converters together in one browser-based workspace.</p><div className="about-grid"><article><span><LockKeyhole size={17} /></span><h2>Privacy</h2><p>Tool inputs are processed in your browser and are not sent to a JStack application backend or stored in local storage. The hosting provider still processes normal web requests. <a href="/privacy.html">Read the privacy policy</a></p></article><article><span><ShieldCheck size={17} /></span><h2>JWT security</h2><p>Decoding only reveals content; it does not verify signatures. Verification does not make an authorization decision. A signed JWT is not encrypted.</p></article><article><span><Braces size={17} /></span><h2>Data formats</h2><p>JSON validation checks syntax, not a schema. Java models are inferred from one sample, not schema-validated. Base64 is not encryption. JStack Base128 is a custom format and may not interoperate with other tools. <a href="/guide.html">Read the developer guide</a></p></article><article><span><CircleHelp size={17} /></span><h2>Contact</h2><p><a href="mailto:shaikmukhuran@gmail.com">shaikmukhuran@gmail.com</a><br /><a href="tel:+17207521486">720-752-1486</a></p></article></div><div className="policy-disclaimer"><b>Contact and legal information</b><p>Review the <a href="/terms.html">Terms of Use</a> and <a href="/privacy.html">Privacy Policy</a> for the hosting and data practices that apply to the deployed site.</p></div><button className="button button-secondary back-tool" onClick={onHome}><ArrowLeftRight size={14} /> Tool workspace</button></div>
 }
 
 export default App

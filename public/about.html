@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="About JStack's browser-based JWT, JSON, and Base64 developer tools.">
+  <meta name="description" content="About JStack's browser-based JWT, JSON, Java model, Base64, and custom Base128 developer tools.">
   <link rel="stylesheet" href="/policy.css">
   <title>About JStack</title>
 </head>
@@ -15,7 +15,9 @@
     <p class="lead">JStack brings common token and data-format tasks into one browser-based workspace.</p>
     <article><h2>JWT workbench</h2><p>Inspect compact JWTs, sign and verify JWS tokens, and encrypt or decrypt supported JWE formats. Cryptographic operations use the browser and the maintained jose library. Decoding only reveals encoded content; it does not verify a token or authorize access.</p></article>
     <article><h2>JSON tools</h2><p>Format, minify, and check the syntax of JSON. Syntax validation does not validate application schemas or business rules.</p></article>
+    <article><h2>JSON to Java models</h2><p>Generate nested Java records or POJOs from a sample JSON object. The generator infers types rather than validating a schema; null-only or mixed values use <code>Object</code>. Renamed JSON keys use Jackson <code>@JsonProperty</code> annotations.</p></article>
     <article><h2>Base64 text</h2><p>Encode UTF-8 text to standard Base64 and decode standard Base64 back to text. Base64 is an encoding format, not encryption. Base64URL is a distinct format and is not accepted by this tool.</p></article>
+    <article><h2>JStack Base128</h2><p>JStack Base128 is a custom format that packs UTF-8 bytes into seven-bit groups and maps them to Braille symbols U+2801–U+2880. It is not a universal standard and is only compatible with decoders using the same mapping.</p></article>
     <article><h2>Local processing</h2><p>Tool inputs are processed in the page and are not sent to a JStack application backend or saved in local storage. The hosting provider still receives ordinary web requests; see the <a href="/privacy.html">Privacy Policy</a>.</p></article>
     <p class="notice">The tools are for convenience and education. Review security-sensitive results independently before production use.</p>
   </main>

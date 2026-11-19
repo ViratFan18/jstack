@@ -1,6 +1,10 @@
 # JStack
 
-Browser-only JWT/JWE workbench and JSON formatter, minifier, and validator built with React, TypeScript, Vite, `jose`, and Web Crypto.
+Browser-only JWT/JWE workbench, JSON formatter/minifier/validator, JSON-to-Java record/POJO generator, and Base64 and custom JStack Base128 text converters built with React, TypeScript, Vite, `jose`, and Web Crypto.
+
+JStack Base128 packs UTF-8 bytes into seven-bit groups and maps each group to a Braille symbol from U+2801–U+2880. This is a custom format, not a standard; only decoders using the same mapping can read it.
+
+The JSON-to-Java generator infers nested models from an example object. Empty, null-only, or incompatible mixed values use `Object`; renamed JSON keys use Jackson `@JsonProperty` annotations. Record output requires Java 16 or newer. Generated code is a starting point, not a schema or deserializer.
 
 ## Run locally
 
@@ -31,7 +35,7 @@ Connect the repository in Cloudflare Pages and use:
 - Node.js: `22.14.0` (pinned in `.nvmrc`; this project was verified with this version)
 - Build environment variable: `VITE_SITE_URL=https://your-real-domain.example` (replace with the exact HTTPS origin assigned to your Pages project or custom domain)
 
-Set `VITE_SITE_URL` in Cloudflare Pages to the exact production HTTPS origin (`https://jstack.pages.dev` for the current Pages site, or your custom domain). The build uses it to generate canonical links, Open Graph metadata, `robots.txt`, and `sitemap.xml`; when the variable is omitted outside Cloudflare, it defaults to the current Pages origin. The tool guides and the About, Guide, Contact, Privacy, and Terms pages are generated or copied as static HTML. Cloudflare Pages serves these files directly, including its clean URLs (for example, `/jwt-decoder`); the interactive workspace remains at `/` and its tool launch links use query parameters. Unknown paths should return 404.
+Set `VITE_SITE_URL` in Cloudflare Pages to the exact production HTTPS origin (`https://jstack.pages.dev` for the current Pages site, or your custom domain). The build uses it to generate canonical links, Open Graph metadata, `robots.txt`, and `sitemap.xml`; when the variable is omitted outside Cloudflare, it defaults to the current Pages origin. The tool guides (including `/json-to-java`) and the About, Guide, Contact, Privacy, and Terms pages are generated or copied as static HTML. Cloudflare Pages serves these files directly, including their clean URLs (for example, `/jwt-decoder`); the interactive workspace remains at `/` and its tool launch links use query parameters. Unknown paths should return 404.
 
 You can deploy from the Cloudflare dashboard by connecting the Git repository; no backend, database, Wrangler CLI, or server function is required.
 
@@ -47,7 +51,7 @@ Both hosts can also deploy the same static build with their CLI. Use the `dist` 
 
 ## Strict Publisher Review
 
-Current status: the AdSense loader is not included because there are no ad placements; `public/ads.txt` contains the publisher seller record. No analytics or consent-management platform is configured. This is not an AdSense approval check; approval and revenue are not guaranteed.
+Current status: the app reserves a responsive ad placement below the tools, but does not load AdSense or serve ads. Configure a valid publisher ID, ad unit, and required consent signaling before enabling ads; `public/ads.txt` contains the publisher seller record and must be verified by the operator. No analytics or consent-management platform is configured. This is not an AdSense approval check; approval and revenue are not guaranteed.
 
 Before enabling ads or applying, complete these operator-owned steps:
 
@@ -57,17 +61,17 @@ Before enabling ads or applying, complete these operator-owned steps:
 - Add substantial original material that genuinely helps developers: detailed explanations, supported algorithm/key formats, safe examples, and limitations. A set of utilities alone may not satisfy Google's site-value review.
 - Before enabling advertising, configure a Google-certified consent-management platform and consent signaling where required for your audience, and verify ad requests honor those choices.
 - If analytics or other third-party scripts are added, update the privacy disclosures and CSP in `public/_headers`; verify no sensitive tool input can reach those services.
-- Keep any future ad units clearly labeled and separated from tool controls; never encourage clicks or style ads as navigation or tool controls. The current `ads.txt` record is based on the publisher ID supplied for this project; verify it in the AdSense account before launch.
+- Keep ad units clearly labeled and separated from tool controls; never encourage clicks or style ads as navigation or tool controls. The current `ads.txt` record is based on the publisher ID supplied for this project; verify it in the AdSense account before launch.
 - Check the current official AdSense policies and decisions directly. The publisher review is manual and Google controls approval.
 - Full `npm audit` currently reports a high-severity ReDoS advisory in `picomatch@4.0.7`, pulled into development/build tools by Vite and Vitest. No patched picomatch release is available in the current registry metadata; npm's suggested forced change downgrades the toolchain. The vulnerable package is not shipped in `dist`, and `npm audit --omit=dev` reports zero findings, but re-check before updating dependencies and keep builds limited to trusted source.
 
 ## Prelaunch Checks
 
 - Run `npm test`, `npm run lint`, and `npm run build`.
-- Verify JWT/JWE operations, JSON format/minify/validation, and Base64 text round-trips after deployment.
+- Verify JWT/JWE operations, JSON format/minify/validation, JSON-to-Java output, and Base64 and JStack Base128 text round-trips after deployment.
 - Check policy links, contact links, keyboard access, mobile layout, and Cloudflare's response headers on the live domain.
 - Keep production JWTs, private keys, and secrets out of screenshots, support emails, and issue reports.
 
 ## Security notes
 
-Tokens, keys, JSON, and Base64 text are processed in the browser and are not written to local storage. Do not treat decoding as signature verification. JSON validation reports syntax validity only; it does not validate an application-specific schema. Never use this tool alone as a security review.
+Tokens, keys, JSON, and text are processed in the browser and are not written to local storage. Do not treat decoding as signature verification. JSON validation reports syntax validity only; the JSON-to-Java generator infers types from one sample and does not validate an application schema. Never use this tool alone as a security review.

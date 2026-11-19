@@ -3,17 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="A practical guide to JWT decoding, signing, verification, encryption, JSON validation, and Base64 for developers.">
-  <meta property="og:title" content="JWT and Encoding Guide · JStack">
-  <meta property="og:description" content="Understand token formats, algorithms, JSON syntax checks, and Base64 limitations.">
+  <meta name="description" content="A practical guide to JWT/JWE security, Java and Spring resource servers, JSON models, and Base64 for backend developers.">
+  <meta property="og:title" content="JWT and Java Backend Security Guide · JStack">
+  <meta property="og:description" content="Understand JWT verification, key guidance, Java examples, JSON models, and Base64 limitations.">
   <link rel="stylesheet" href="/policy.css">
-  <title>JWT and Encoding Guide · JStack</title>
+  <title>JWT and Java Backend Security Guide · JStack</title>
 </head>
 <body>
   <header><a class="brand" href="/">jstack<span>.</span></a><nav><a href="/">Tools</a><a href="/guide.html">Guide</a><a href="/about.html">About</a><a href="/contact.html">Contact</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></nav></header>
   <main>
     <div class="eyebrow">JSTACK / DEVELOPER GUIDE</div>
-    <h1>JWT, JSON, and Base64: practical distinctions</h1>
+    <h1>JWT and Java backend security: practical guide</h1>
     <p class="lead">Use the right operation for the job. Encoding changes representation; signing provides integrity; encryption protects content confidentiality.</p>
     <article>
       <h2>Decoding a JWT is not verification</h2>
@@ -21,9 +21,61 @@
       <p>To verify a JWS, validate its signature using the expected algorithm and the correct key. Also check the claims your application relies on, such as issuer (`iss`), audience (`aud`), expiration (`exp`), and not-before (`nbf`). A valid signature alone does not grant authorization; your application must still decide whether the subject may perform the requested action.</p>
     </article>
     <article>
+      <h2>Inspect JWT parts in Java without trusting them</h2>
+      <p>The JDK URL-safe Base64 decoder can display the header and payload. This example deliberately does not verify a signature or validate claims; never use its decoded values as authenticated identity.</p>
+      <pre><code>import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
+public final class InspectJwt {
+    public static void main(String[] args) {
+        String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqYXZhLWRldiIsInJvbGUiOiJlbmdpbmVlciIsImlhdCI6MTcwNDA2NzIwMH0.c2FtcGxlLXNpZ25hdHVyZQ";
+        String[] parts = token.split("\\.", -1);
+        if (parts.length != 3) {
+            throw new IllegalArgumentException("Expected a compact JWS with three parts");
+        }
+
+        String header = new String(Base64.getUrlDecoder().decode(parts[0]), StandardCharsets.UTF_8);
+        String claims = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+        System.out.println(header);
+        System.out.println(claims);
+    }
+}</code></pre>
+      <p>Save as <code>InspectJwt.java</code>, then run <code>javac InspectJwt.java &amp;&amp; java InspectJwt</code>. The JDK decoder accepts unpadded Base64URL. Decoding only reveals bytes; use a maintained JOSE library for verification.</p>
+    </article>
+    <article>
       <h2>Symmetric and asymmetric signatures</h2>
       <p>HMAC algorithms such as HS256 use one shared secret to sign and verify. Every verifier holding that secret can also create signatures, so sharing it expands who can issue tokens. RSA and ECDSA signature schemes use a private key to sign and a public key to verify. Keep private keys secret, and distribute public keys only through channels your system trusts.</p>
       <p>Choose an algorithm from application configuration rather than trusting an unverified token header to choose arbitrary verification behavior. The JStack workbench restricts each verification call to the algorithm selected in its control.</p>
+    </article>
+    <article>
+      <h2>Algorithm and key guidance</h2>
+      <p>Allowlist the algorithms your service expects and reject unexpected algorithms instead of letting an untrusted header select policy. RFC 7518 requires an HMAC key at least as large as the hash output (256 bits for HS256) and RSA keys of 2048 bits or larger for the specified RSA signature algorithms. ES256 uses the P-256 curve. Keep keys out of source control, logs, URLs, and client-side code; use your platform's secret or key-management service and plan rotation.</p>
+      <p>For Spring Security, configure a trusted issuer and use the resource-server support rather than hand-parsing tokens. This Spring Security 6 example expects the corresponding OAuth2 resource-server dependencies and issuer configuration:</p>
+      <pre><code>import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+class ApiSecurity {
+    @Bean
+    SecurityFilterChain apiSecurity(HttpSecurity http) throws Exception {
+        return http
+            .authorizeHttpRequests(authorize -&gt; authorize
+                .requestMatchers("/health").permitAll()
+                .anyRequest().authenticated())
+            .oauth2ResourceServer(resourceServer -&gt;
+                resourceServer.jwt(Customizer.withDefaults()))
+            .build();
+    }
+}</code></pre>
+      <pre><code>spring.security.oauth2.resourceserver.jwt.issuer-uri=https://issuer.example</code></pre>
+      <p>Configure audience validation and application authorization for your own API as well; issuer-based JWT decoding alone is not an access-control policy. See the <a href="https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/jwt.html" rel="noopener noreferrer">Spring Security JWT resource-server reference</a>.</p>
+    </article>
+    <article>
+      <h2>Common JWT integration errors</h2>
+      <p>A malformed compact token usually has the wrong number of dot-separated parts or invalid Base64URL data. A signature failure often means the wrong key, algorithm, or key encoding was selected. Expiration failures can come from an expired <code>exp</code> claim or a system clock that is out of sync; JWT NumericDate values are seconds, not Java milliseconds. Issuer and audience failures mean the token does not match the resource server's configured trust context. Diagnose these conditions without logging bearer tokens or keys.</p>
     </article>
     <article>
       <h2>Signing is different from encryption</h2>
@@ -39,10 +91,22 @@
       <p>Standard Base64 represents bytes with printable characters and padding. It offers no confidentiality and no integrity protection. Use it for transport or text representation only; do not treat an encoded password, token, or key as protected. Base64URL is a related variant with different characters and padding conventions, commonly used inside JWTs.</p>
     </article>
     <article>
+      <h2>JStack Base128 is a custom format</h2>
+      <p>The JStack Base128 converter packs UTF-8 bytes into seven-bit groups and maps each group to a Braille symbol from U+2801–U+2880. This is not a universal Base128 standard; use the matching JStack decoder for round-trips.</p>
+    </article>
+    <article>
+      <h2>Generate Java models from JSON</h2>
+      <p>The <a href="/json-to-java">JSON-to-Java generator</a> creates nested records or POJOs from a sample object. Treat the result as a starting model, not an API schema: mixed, empty, or null-only values may become <code>Object</code>, and renamed properties use Jackson annotations.</p>
+    </article>
+    <article>
       <h2>Use local tools carefully</h2>
       <p>JStack performs supported operations in the current browser and does not send tool inputs to a JStack application backend. However, the deployed page and its hosting provider remain part of your trust boundary. For production credentials, use a tool whose code and hosting you have reviewed, and independently verify critical results.</p>
     </article>
-    <p class="notice">Open the <a href="/">JWT workbench</a> or use the <a href="/">JSON and Base64 tools</a>. For security-critical systems, consult your organization's security requirements and standards.</p>
+    <article>
+      <h2>Authoritative references</h2>
+      <p><a href="https://www.rfc-editor.org/rfc/rfc7519" rel="noopener noreferrer">RFC 7519 · JSON Web Token (JWT)</a> · <a href="https://www.rfc-editor.org/rfc/rfc7515" rel="noopener noreferrer">RFC 7515 · JSON Web Signature (JWS)</a> · <a href="https://www.rfc-editor.org/rfc/rfc7516" rel="noopener noreferrer">RFC 7516 · JSON Web Encryption (JWE)</a> · <a href="https://www.rfc-editor.org/rfc/rfc7518" rel="noopener noreferrer">RFC 7518 · JSON Web Algorithms (JWA)</a> · <a href="https://www.rfc-editor.org/rfc/rfc8725" rel="noopener noreferrer">RFC 8725 · JWT Best Current Practices</a>.</p>
+    </article>
+    <p class="notice">Open the <a href="/">JWT workbench</a>, the <a href="/json-to-java">JSON-to-Java generator</a>, or use the JSON and encoding tools. For security-critical systems, consult your organization's security requirements and standards.</p>
   </main>
   <footer><span>JStack · developer tools</span><span><a href="/about.html">About</a><a href="/contact.html">Contact</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></span></footer>
 </body>
