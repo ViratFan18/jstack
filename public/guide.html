@@ -6,11 +6,12 @@
   <meta name="description" content="A practical guide to JWT/JWE security, Java and Spring resource servers, JSON models, and Base64 for backend developers.">
   <meta property="og:title" content="JWT and Java Backend Security Guide · JStack">
   <meta property="og:description" content="Understand JWT verification, key guidance, Java examples, JSON models, and Base64 limitations.">
+  <script src="/theme.js" defer></script>
   <link rel="stylesheet" href="/policy.css">
   <title>JWT and Java Backend Security Guide · JStack</title>
 </head>
 <body>
-  <header><a class="brand" href="/">jstack<span>.</span></a><nav><a href="/">Tools</a><a href="/guide.html">Guide</a><a href="/about.html">About</a><a href="/contact.html">Contact</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></nav></header>
+  <header><a class="brand" href="/">JStack</a><nav aria-label="Main navigation"><a href="/">Tools</a><a href="/guide.html">Guide</a><a href="/about.html">About</a><a href="/contact.html">Contact</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><button class="theme-toggle" type="button" data-theme-toggle><span class="theme-toggle-icon" aria-hidden="true">◐</span><span class="theme-toggle-label">Light theme</span></button></nav></header>
   <main>
     <div class="eyebrow">JSTACK / DEVELOPER GUIDE</div>
     <h1>JWT and Java backend security: practical guide</h1>
@@ -93,6 +94,22 @@ class ApiSecurity {
     <article>
       <h2>JStack Base128 is a custom format</h2>
       <p>The JStack Base128 converter packs UTF-8 bytes into seven-bit groups and maps each group to a Braille symbol from U+2801–U+2880. This is not a universal Base128 standard; use the matching JStack decoder for round-trips.</p>
+    </article>
+    <article>
+      <h2>Fix common JWT and JWE errors</h2>
+      <p><strong>“A signed JWT must contain three dot-separated parts”</strong> usually means the input is incomplete, includes extra text, or is a five-part JWE. Copy the full compact token; use the JWE decryptor for a five-part encrypted token. If the header or payload cannot be parsed, check that each JWT part is unmodified Base64URL data and that the first two parts decode to JSON objects.</p>
+      <p><strong>Signature verification fails</strong> when the token, selected algorithm, or key do not match. Confirm the expected algorithm, use the matching shared secret or public key, and check that PEM keys use the required SPKI or PKCS#8 format. An expired <code>exp</code> claim or future <code>nbf</code> claim can also fail verification; JWT NumericDate values are seconds, not milliseconds.</p>
+      <p><strong>JWE key errors</strong> often come from using standard Base64 instead of Base64URL, a key with the wrong byte length, or the wrong RSA key. Direct A256GCM requires the same 32-byte key used to encrypt. RSA-OAEP-256 encryption takes a public SPKI key; decryption takes its matching private PKCS#8 key. Never send tokens or keys when asking for help.</p>
+    </article>
+    <article>
+      <h2>Fix JSON and Java generator errors</h2>
+      <p><strong>JSON parse errors</strong> commonly come from single-quoted strings, unquoted property names, trailing commas, or comments. JSON requires double-quoted strings and property names and does not allow comments or trailing commas. A valid JSON value can still fail Java model generation because the generator requires a top-level object.</p>
+      <p><strong>Generated fields use <code>Object</code></strong> when the sample is null-only, empty, or mixes incompatible value types; provide a representative example with populated, consistent values. If generated output includes <code>@JsonProperty</code>, add Jackson annotations to the project. Records require Java 16 or newer; choose POJO output for older Java versions.</p>
+    </article>
+    <article>
+      <h2>Fix Base64 and Base128 conversion errors</h2>
+      <p><strong>Base64 decoding errors</strong> can mean the input uses the URL-safe alphabet (<code>-</code> or <code>_</code>) instead of standard Base64 (<code>+</code> or <code>/</code>), has invalid padding, or does not represent valid UTF-8 text. Use standard Base64 text with valid optional padding; this converter does not decode arbitrary binary files or JWT Base64URL parts.</p>
+      <p><strong>Base128 decoding errors</strong> indicate that the input is not canonical JStack Base128 text, contains symbols outside its Braille alphabet, or does not decode to valid UTF-8. Use the complete output from the matching JStack encoder; this custom encoding is not interchangeable with other Base128 formats.</p>
     </article>
     <article>
       <h2>Generate Java models from JSON</h2>

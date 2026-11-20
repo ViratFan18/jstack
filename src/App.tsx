@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import {
-  ArrowLeftRight, ArrowUpDown, Binary, BookOpenText, Braces, Check, CircleHelp, Code2, Copy,
-  FileKey2, KeyRound, LockKeyhole, Menu, Moon, RotateCcw, ShieldCheck, Sun,
-  TerminalSquare, WandSparkles, X,
+  ArrowLeftRight, ArrowUpDown, Binary, BookOpenText, Braces, Check, ChevronDown, CircleHelp,
+  Code2, Copy, FileKey2, Grid2X2, Image, KeyRound, LockKeyhole, Megaphone, Menu, Moon,
+  RotateCcw, ShieldCheck, Sun, TerminalSquare, WandSparkles, X,
 } from 'lucide-react'
 import { JWE_ALGORITHMS, JWS_ALGORITHMS } from './lib/jwt-constants'
 import { generateJavaModel, type JavaModelStyle } from './lib/javaModel'
@@ -27,7 +27,7 @@ type ToolRoute = {
   encodingFormat?: EncodingFormat
 }
 
-const jwtModes: JwtMode[] = ['Decode', 'Encode & sign', 'Verify', 'Encrypt', 'Decrypt', 'Keys']
+const jwtModes: JwtMode[] = ['Encode & sign', 'Verify', 'Decode', 'Encrypt', 'Decrypt', 'Keys']
 const sampleJwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqYXZhLWRldiIsInJvbGUiOiJlbmdpbmVlciIsImlhdCI6MTcwNDA2NzIwMH0.c2FtcGxlLXNpZ25hdHVyZQ'
 const sampleJavaInput = '{\n  "id": 42,\n  "displayName": "Ada Lovelace",\n  "active": true,\n  "address": {\n    "city": "London",\n    "postalCode": "N1"\n  },\n  "roles": ["admin", "author"],\n  "nickname": null\n}'
 const toolRoutes: Record<string, ToolRoute> = {
@@ -107,12 +107,12 @@ function App() {
   const requestedTool = new URLSearchParams(window.location.search).get('tool')
   const initialRoute = requestedTool ? toolRoutes[requestedTool] : undefined
   const [section, setSection] = useState<Section>(initialRoute?.section ?? 'jwt')
-  const [jwtMode, setJwtMode] = useState<JwtMode>(initialRoute?.jwtMode ?? 'Decode')
+  const [jwtMode, setJwtMode] = useState<JwtMode>(initialRoute?.jwtMode ?? 'Encode & sign')
   const [jsonMode, setJsonMode] = useState<JsonMode>(initialRoute?.jsonMode ?? 'format')
   const [base64Mode, setBase64Mode] = useState<Base64Mode>(initialRoute?.base64Mode ?? 'encode')
   const [base128Mode, setBase128Mode] = useState<Base64Mode>(initialRoute?.base128Mode ?? 'encode')
   const [encodingFormat, setEncodingFormat] = useState<EncodingFormat>(initialRoute?.encodingFormat ?? 'base64')
-  const [darkMode, setDarkMode] = useState(true)
+  const [darkMode, setDarkMode] = useState(() => window.localStorage.getItem('jstack-theme-v2') === 'dark')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [token, setToken] = useState('')
   const [header, setHeader] = useState('{\n  "typ": "JWT"\n}')
@@ -140,9 +140,13 @@ function App() {
   const [base128Error, setBase128Error] = useState('')
   const [copied, setCopied] = useState(false)
   const jweMode = jwtMode === 'Encrypt' || jwtMode === 'Decrypt'
-  const isHomepage = section === 'jwt' && jwtMode === 'Decode' && !requestedTool
+  const isHomepage = section === 'jwt' && !requestedTool
 
-  useEffect(() => { document.documentElement.dataset.theme = darkMode ? 'dark' : 'light' }, [darkMode])
+  useEffect(() => {
+    const theme = darkMode ? 'dark' : 'light'
+    document.documentElement.dataset.theme = theme
+    window.localStorage.setItem('jstack-theme-v2', theme)
+  }, [darkMode])
   useEffect(() => {
     const activeRoute = requestedTool ? toolRoutes[requestedTool] : undefined
     const routeMatchesState = activeRoute?.section === section
@@ -152,19 +156,19 @@ function App() {
       && (activeRoute.base128Mode === undefined || activeRoute.base128Mode === base128Mode)
       && (activeRoute.encodingFormat === undefined || activeRoute.encodingFormat === encodingFormat)
     const route = routeMatchesState ? activeRoute : undefined
-    const isHome = section === 'jwt' && jwtMode === 'Decode' && !requestedTool
+    const isHome = section === 'jwt' && !requestedTool
     const jwtRoute = Object.values(toolRoutes).find((item) => item.section === 'jwt' && item.jwtMode === jwtMode) ?? toolRoutes['jwt-decoder']
     const jsonRoute = Object.values(toolRoutes).find((item) => item.section === 'json' && item.jsonMode === jsonMode) ?? toolRoutes['json-formatter']
     const javaRoute = toolRoutes['json-to-java']
     const pageTitle = route?.title ?? (isHome
-      ? 'JStack – Free Java Developer Tools, JWT Encoder & Decoder'
+      ? 'JStack – Free Java Developer Tools for JWT, JSON & Base64'
       : section === 'jwt' ? jwtRoute.title
         : section === 'json' ? jsonRoute.title
         : section === 'base64' ? (encodingFormat === 'base128' ? toolRoutes['base128-converter'].title : toolRoutes['base64-converter'].title)
           : section === 'java' ? javaRoute.title
           : 'About JStack · Browser-Based Developer Tools')
     const pageDescription = route?.description ?? (isHome
-      ? 'Free browser-based Java and backend developer tools: inspect JWTs, format JSON, generate Java models, and convert text locally.'
+      ? 'Free online Java developer tools for inspecting JWTs, formatting JSON, generating Java models, and converting text in your browser.'
       : section === 'jwt' ? jwtRoute.description
         : section === 'json' ? jsonRoute.description
         : section === 'base64' ? (encodingFormat === 'base128' ? toolRoutes['base128-converter'].description : toolRoutes['base64-converter'].description)
@@ -344,13 +348,35 @@ function App() {
   return <div className="app-shell">
     <header className="topbar">
       <button className="mobile-menu icon-button" aria-label="Open navigation" onClick={() => setSidebarOpen(!sidebarOpen)}><Menu size={19} /></button>
-      <button className="brand" onClick={() => navigate('jwt')} aria-label="JStack home"><span className="brand-mark"><Code2 size={18} /></span><span>jstack<span className="brand-dot">.</span></span></button>
-      <div className="topbar-divider" /><div className="product-label">Developer tools <span className="version-chip">BETA</span></div>
-      <div className="topbar-actions"><button className="icon-button theme-toggle" onClick={() => setDarkMode(!darkMode)} aria-label="Toggle color theme">{darkMode ? <Sun size={18} /> : <Moon size={18} />}</button></div>
+      <button className="brand" onClick={() => navigate('jwt')} aria-label="JStack home"><span className="brand-mark"><Code2 size={18} /></span><span>JStack</span></button>
+      <nav className="topbar-nav" aria-label="Site navigation">
+        <details className="tool-dropdown">
+          <summary><Grid2X2 size={16} /> Developer Tools <ChevronDown size={14} /></summary>
+          <div className="tool-dropdown-menu">
+            <button onClick={(event) => { navigate('jwt'); event.currentTarget.closest('details')?.removeAttribute('open') }}><ShieldCheck size={15} /> JWT Workbench</button>
+            <button onClick={(event) => { navigate('base64'); event.currentTarget.closest('details')?.removeAttribute('open') }}><ArrowUpDown size={15} /> Base64 / 128</button>
+            <button onClick={(event) => { navigate('json'); event.currentTarget.closest('details')?.removeAttribute('open') }}><Braces size={15} /> JSON Studio</button>
+            <button onClick={(event) => { navigate('java'); event.currentTarget.closest('details')?.removeAttribute('open') }}><Code2 size={15} /> JSON to Java</button>
+          </div>
+        </details>
+        <details className="tool-dropdown resource-dropdown">
+          <summary>Resources <ChevronDown size={14} /></summary>
+          <div className="tool-dropdown-menu">
+            <a href="/guide"><BookOpenText size={15} /> Developer guide</a>
+            <a href="/jwt-decoder"><ShieldCheck size={15} /> JWT decoder guide</a>
+            <a href="/json-to-java"><Code2 size={15} /> JSON to Java guide</a>
+          </div>
+        </details>
+        <a href="/about">About</a>
+        <a href="/contact">Feedback</a>
+      </nav>
+      <div className="topbar-actions">
+        <button className="icon-button theme-toggle" onClick={() => setDarkMode(!darkMode)} aria-label={`Switch to ${darkMode ? 'light' : 'dark'} theme`} title={`Switch to ${darkMode ? 'light' : 'dark'} theme`}>{darkMode ? <Sun size={18} /> : <Moon size={18} />}</button>
+      </div>
     </header>
     <div className="app-body">
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
-        <div className="sidebar-topline"><span className="sidebar-workspace-label">TOOLBOX</span><span className="sidebar-activity"><i /> LOCAL</span></div>
+        <div className="sidebar-topline"><span className="sidebar-workspace-label">YOUR TOOLKIT</span></div>
         <nav aria-label="Main navigation">
           <p className="nav-caption">SECURITY</p>
           <button className={`nav-item ${section === 'jwt' ? 'active' : ''}`} onClick={() => navigate('jwt')}><span className="nav-icon"><ShieldCheck size={17} /></span><span className="nav-item-copy"><b>JWT Workbench</b></span></button>
@@ -363,25 +389,28 @@ function App() {
           <p className="nav-caption nav-caption-spaced">INFO</p>
           <button className={`nav-item nav-item-about ${section === 'about' ? 'active' : ''}`} onClick={() => navigate('about')}><span className="nav-icon"><BookOpenText size={17} /></span><span className="nav-item-copy"><b>About</b></span><span className="nav-arrow">↗</span></button>
         </nav>
-        <div className="sidebar-bottom"><div className="privacy-mini"><span className="privacy-shield"><LockKeyhole size={15} /></span><span className="privacy-copy"><b>LOCAL ONLY</b><small>Inputs stay here.</small></span><span className="privacy-indicator" aria-hidden="true" /></div><div className="sidebar-foot"><span>JSTACK</span><span className="sidebar-version">v1.0</span></div></div>
+        <div className="sidebar-bottom"><div className="privacy-mini"><span className="privacy-shield"><LockKeyhole size={15} /></span><span className="privacy-copy"><b>Private by design</b><small>Your tool inputs stay in this tab.</small></span><span className="privacy-indicator" aria-hidden="true" /></div><div className="sidebar-foot"><span>JSTACK</span><span className="sidebar-version">FAST · SECURE · FREE</span></div></div>
       </aside>
       {sidebarOpen && <button className="sidebar-scrim" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
       <main className="main-content">
+        <div className="page-layout">
+          <div className="page-primary">
+        <TopAdSlot />
         {section === 'jwt' && <>
-          <div className="page-heading"><div><div className="eyebrow"><span className="eyebrow-mark"><KeyRound size={12} /></span> TOKEN WORKSPACE <span className="eyebrow-separator">/</span> JWS + JWE</div><h1>{isHomepage ? 'Free Online Java & Backend Developer Tools' : jwtMode === 'Decode' ? 'JWT decoder' : jwtMode === 'Encode & sign' ? 'JWT encoder and signer' : jwtMode === 'Verify' ? 'JWT signature verifier' : jwtMode === 'Encrypt' ? 'JWE encryptor' : jwtMode === 'Decrypt' ? 'JWE decryptor' : 'JWT key generator'}</h1><p>Inspect, sign, verify and encrypt tokens without sending them anywhere.</p></div><button className="button button-secondary sample-button" onClick={loadExample}><WandSparkles size={15} /> Load example</button></div>
+          <div className="page-heading"><div><div className="eyebrow"><span className="eyebrow-mark"><KeyRound size={12} /></span> TOKEN WORKSPACE <span className="eyebrow-separator">/</span> JWS + JWE</div><h1>{isHomepage ? 'JWT Workbench' : jwtMode === 'Decode' ? 'JWT decoder' : jwtMode === 'Encode & sign' ? 'JWT encoder and signer' : jwtMode === 'Verify' ? 'JWT signature verifier' : jwtMode === 'Encrypt' ? 'JWE encryptor' : jwtMode === 'Decrypt' ? 'JWE decryptor' : 'JWT key generator'}</h1><p>{isHomepage ? 'Encode, sign and verify JSON Web Tokens (JWT) with ease.' : jwtMode === 'Decode' ? 'Read a JWT header and claims payload. Decoding does not verify its signature.' : jwtMode === 'Encode & sign' ? 'Create a signed JWT with a supported algorithm and key.' : jwtMode === 'Verify' ? 'Check a JWT signature and registered claims against a selected key.' : jwtMode === 'Encrypt' ? 'Encrypt a JSON payload using a supported JWE algorithm.' : jwtMode === 'Decrypt' ? 'Decrypt a compact JWE using its matching key.' : 'Generate compatible signing or encryption key material.'}</p></div><button className="button button-secondary sample-button" onClick={loadExample}><WandSparkles size={15} /> Load example</button></div>
           <div className="jwt-tabs" role="tablist" aria-label="JWT operations">{jwtModes.map((mode) => <button key={mode} role="tab" aria-selected={jwtMode === mode} className={jwtMode === mode ? 'active' : ''} onClick={() => { setJwtMode(mode); setNotice(null); setDecoded(null) }}>{mode === 'Encrypt' || mode === 'Decrypt' ? <LockKeyhole size={14} /> : mode === 'Keys' ? <FileKey2 size={14} /> : null}{mode}</button>)}</div>
-          <div className="privacy-callout"><LockKeyhole size={15} /><span><b>Local processing.</b> Tokens, keys and payloads stay in this tab and are never uploaded or stored.</span><button title="Operations are performed in your browser." aria-label="About local processing"><CircleHelp size={15} /></button></div>
+          <div className="privacy-callout"><LockKeyhole size={15} /><span><b>Private by design.</b> Tokens, keys and payloads are processed in this tab and are not uploaded or saved.</span><button title="Operations are performed in your browser." aria-label="About private processing"><CircleHelp size={15} /></button></div>
           <div className="workbench-grid">
             <section className="editor-column">
               {(jwtMode === 'Decode' || jwtMode === 'Verify' || jwtMode === 'Decrypt') && <div className="field-block token-field"><div className="field-heading"><label htmlFor="jwt-token">{jwtMode === 'Decrypt' ? 'JWE token' : 'Encoded token'}</label><span className="field-meta">{token.trim() ? `${token.trim().length} chars` : 'Paste a compact token'}</span></div><textarea id="jwt-token" className="code-editor token-editor" value={token} onChange={(event) => setToken(event.target.value)} placeholder="eyJhbGciOi..." spellCheck={false} /><div className="field-tools"><button onClick={() => setToken('')}><RotateCcw size={13} /> Clear</button><button onClick={loadExample}><WandSparkles size={13} /> Example token</button><span>JWT: header.payload.signature</span></div></div>}
               {(jwtMode === 'Encode & sign' || jwtMode === 'Encrypt') && <>{jwtMode === 'Encode & sign' && <div className="field-block"><div className="field-heading"><label htmlFor="jwt-header">JOSE header</label><span className="field-meta">JSON</span></div><textarea id="jwt-header" className="code-editor small-editor" value={header} onChange={(event) => setHeader(event.target.value)} spellCheck={false} /></div>}<div className="field-block"><div className="field-heading"><label htmlFor="jwt-payload">{jwtMode === 'Encrypt' ? 'Plaintext payload' : 'JWT payload'}</label><span className="field-meta">JSON</span></div><textarea id="jwt-payload" className="code-editor payload-editor" value={payload} onChange={(event) => setPayload(event.target.value)} spellCheck={false} /></div>{jwtMode === 'Encode & sign' && <div className="claims-strip"><span>Claims quick-add</span>{['exp', 'nbf', 'iss', 'aud'].map((claim) => <button key={claim} onClick={() => { try { const current = JSON.parse(payload); current[claim] = claim === 'exp' ? Math.floor(Date.now() / 1000) + 3600 : claim === 'nbf' ? Math.floor(Date.now() / 1000) : claim === 'iss' ? 'https://issuer.example' : 'java-api'; setPayload(JSON.stringify(current, null, 2)) } catch { setNotice({ tone: 'error', title: 'Invalid payload JSON', detail: 'Fix the payload before adding a claim.' }) } }}>{claim}</button>)}</div>}</>}
               {(jwtMode === 'Encode & sign' || jwtMode === 'Verify' || jwtMode === 'Encrypt' || jwtMode === 'Decrypt') && <div className="field-block crypto-settings"><div className="field-heading"><label htmlFor="jwt-algorithm">{jweMode ? 'Key management / content encryption' : 'Signing algorithm'}</label><span className="field-meta">{jweMode ? 'JWE' : 'JWS'}</span></div><div className="settings-row"><select id="jwt-algorithm" value={algorithm} onChange={(event) => setAlgorithm(event.target.value)}>{(jweMode ? JWE_ALGORITHMS : JWS_ALGORITHMS).map((item) => <option key={item} value={item}>{item}</option>)}</select>{jwtMode === 'Verify' && <label className="tolerance-control">Clock tolerance <input type="number" min="0" max="300" value={tolerance} onChange={(event) => setTolerance(event.target.value)} aria-label="Clock tolerance in seconds" /><span>sec</span></label>}</div><div className="field-heading key-label"><label htmlFor="jwt-key">{jweMode ? (jwtMode === 'Encrypt' ? (algorithm.startsWith('dir') ? '256-bit shared key' : 'RSA public key') : (algorithm.startsWith('dir') ? '256-bit shared key' : 'RSA private key')) : algorithm.startsWith('HS') ? 'Shared secret' : jwtMode === 'Verify' ? 'Public key · SPKI' : 'Private key · PKCS#8'}</label><button className="text-action" onClick={() => void generateKey()}><KeyRound size={13} /> Generate key</button></div><textarea id="jwt-key" className={`code-editor key-editor ${secret ? 'key-filled' : ''}`} value={secret} onChange={(event) => setSecret(event.target.value)} placeholder={algorithm.startsWith('HS') || algorithm.startsWith('dir') ? 'Paste secret or generate a secure key…' : '-----BEGIN PUBLIC KEY / PRIVATE KEY-----'} spellCheck={false} /><p className="key-hint">{jweMode ? 'A256GCM needs a 32-byte key. RSA mode needs a matching public/private pair.' : algorithm.startsWith('HS') ? 'HMAC uses the same secret to sign and verify. Keep it private.' : 'Asymmetric signatures use a private key to sign and the matching public key to verify.'}</p></div>}
               {jwtMode === 'Keys' && <KeyGenerator onGenerate={async (alg) => { setAlgorithm(alg); await generateKey(alg) }} />}
-              {jwtMode !== 'Keys' && <div className="run-row"><button className="button button-primary run-button" onClick={() => void runJwt()} disabled={busy}>{busy ? <span className="spinner" /> : jwtMode === 'Verify' ? <ShieldCheck size={16} /> : jwtMode === 'Decrypt' ? <LockKeyhole size={15} /> : <WandSparkles size={15} />}{jwtMode === 'Decode' ? 'Decode token' : jwtMode === 'Encode & sign' ? 'Sign JWT' : jwtMode === 'Verify' ? 'Verify token' : jwtMode === 'Encrypt' ? 'Encrypt payload' : 'Decrypt token'}</button><span className="run-local"><span /> Runs in your browser</span></div>}
+              {jwtMode !== 'Keys' && <div className="run-row"><button className="button button-primary run-button" onClick={() => void runJwt()} disabled={busy}>{busy ? <span className="spinner" /> : jwtMode === 'Verify' ? <ShieldCheck size={16} /> : jwtMode === 'Decrypt' ? <LockKeyhole size={15} /> : <WandSparkles size={15} />}{jwtMode === 'Decode' ? 'Decode token' : jwtMode === 'Encode & sign' ? 'Sign JWT' : jwtMode === 'Verify' ? 'Verify token' : jwtMode === 'Encrypt' ? 'Encrypt payload' : 'Decrypt token'}</button><span className="run-local">Processed privately in this tab</span></div>}
             </section>
             <section className="result-column" aria-live="polite"><div className="result-top"><div><span className="result-overline">RESULT</span><h2>{jwtMode === 'Decode' ? 'Token inspection' : jwtMode === 'Verify' ? 'Verification result' : jwtMode === 'Keys' ? 'Generated material' : 'Output'}</h2></div><button className="icon-button result-copy" aria-label="Copy result" title="Copy result" onClick={() => void copyText(jwtResult || (decoded ? JSON.stringify(decoded, null, 2) : ''))}><Copy size={15} /></button></div>
               {notice && <div className={`notice notice-${notice.tone}`}><span className="notice-icon">{notice.tone === 'success' ? <Check size={15} /> : notice.tone === 'error' ? <X size={15} /> : <CircleHelp size={15} />}</span><div><b>{notice.title}</b><p>{notice.detail}</p></div></div>}
-              {decoded ? <div className="decoded-panels"><JsonPanel title="HEADER" value={decoded.header} accent="lime" /><JsonPanel title="PAYLOAD" value={decoded.payload} accent="blue" /><div className="signature-panel"><div className="json-panel-heading"><span className="signature-dot" />SIGNATURE <span className="field-meta">{decoded.signature.length} chars</span></div><code>{decoded.signature || '(empty)'}</code></div></div> : jwtResult ? <div className="output-box"><div className="output-format"><span className="output-dot" />{jwtMode === 'Keys' ? 'KEY MATERIAL' : jwtMode === 'Decrypt' ? 'PLAINTEXT' : 'COMPACT TOKEN'}<button onClick={() => void copyText(jwtResult)}>{copied ? <Check size={13} /> : <Copy size={13} />}{copied ? 'Copied' : 'Copy'}</button></div><pre>{jwtResult}</pre></div> : <div className="empty-result"><div className="empty-graphic"><span className="empty-bracket">{'{ }'}</span><span className="empty-lock"><LockKeyhole size={18} /></span></div><b>Ready when you are</b><p>{jwtMode === 'Decode' ? 'Paste a JWT above to inspect its header and payload.' : jwtMode === 'Verify' ? 'Add a token and verification key to validate this JWT.' : jwtMode === 'Encrypt' ? 'Add a payload and key, then encrypt locally.' : jwtMode === 'Decrypt' ? 'Paste a JWE and provide its matching decryption key.' : 'Generate a secure key for supported JWT workflows.'}</p><span className="empty-local"><i /> LOCAL ONLY</span></div>}
+              {decoded ? <div className="decoded-panels"><JsonPanel title="HEADER" value={decoded.header} accent="lime" /><JsonPanel title="PAYLOAD" value={decoded.payload} accent="blue" /><div className="signature-panel"><div className="json-panel-heading"><span className="signature-dot" />SIGNATURE <span className="field-meta">{decoded.signature.length} chars</span></div><code>{decoded.signature || '(empty)'}</code></div></div> : jwtResult ? <div className="output-box"><div className="output-format"><span className="output-dot" />{jwtMode === 'Keys' ? 'KEY MATERIAL' : jwtMode === 'Decrypt' ? 'PLAINTEXT' : 'COMPACT TOKEN'}<button onClick={() => void copyText(jwtResult)}>{copied ? <Check size={13} /> : <Copy size={13} />}{copied ? 'Copied' : 'Copy'}</button></div><pre>{jwtResult}</pre></div> : <div className="empty-result"><div className="empty-graphic"><span className="empty-bracket">{'{ }'}</span><span className="empty-lock"><LockKeyhole size={18} /></span></div><b>Ready when you are</b><p>{jwtMode === 'Decode' ? 'Paste a JWT above to inspect its header and payload.' : jwtMode === 'Verify' ? 'Add a token and verification key to validate this JWT.' : jwtMode === 'Encrypt' ? 'Add a payload and key, then encrypt in this tab.' : jwtMode === 'Decrypt' ? 'Paste a JWE and provide its matching decryption key.' : 'Generate a secure key for supported JWT workflows.'}</p><span className="empty-local">Your data stays private</span></div>}
               <div className="result-foot"><span><LockKeyhole size={12} /> No data leaves this browser</span><span>{decoded ? 'JWT · COMPACT SERIALIZATION' : 'READY'}</span></div>
             </section>
           </div>
@@ -390,7 +419,7 @@ function App() {
 
         {section === 'json' && <>
           <div className="page-heading converter-heading"><div><div className="eyebrow"><span className="eyebrow-mark"><Braces size={12} /></span> DEVELOPER TOOLS <span className="eyebrow-separator">/</span> JSON</div><h1>JSON tools</h1><p>Format, minify, or validate JSON locally in your browser.</p></div><button className="button button-secondary sample-button" onClick={loadExample}><WandSparkles size={15} /> Load example</button></div>
-          <section className="converter-workspace json-workspace"><div className="converter-toolbar"><div className="converter-title"><span className="converter-title-icon"><Braces size={17} /></span><div><b>JSON formatter & validator</b><small>Client-side · no data uploaded</small></div></div><div className="json-mode-tabs" role="tablist" aria-label="JSON operation">{(['format', 'minify', 'validate'] as const).map((mode) => <button key={mode} role="tab" aria-selected={jsonMode === mode} className={jsonMode === mode ? 'active' : ''} onClick={() => { setJsonMode(mode); setConverterOutput(''); setConverterError('') }}>{mode}</button>)}</div></div>
+          <section className="converter-workspace json-workspace"><div className="converter-toolbar"><div className="converter-title"><span className="converter-title-icon"><Braces size={17} /></span><div><b>JSON formatter & validator</b><small>Private processing · your input stays in this tab</small></div></div><div className="json-mode-tabs" role="tablist" aria-label="JSON operation">{(['format', 'minify', 'validate'] as const).map((mode) => <button key={mode} role="tab" aria-selected={jsonMode === mode} className={jsonMode === mode ? 'active' : ''} onClick={() => { setJsonMode(mode); setConverterOutput(''); setConverterError('') }}>{mode}</button>)}</div></div>
             <div className="converter-editors"><div className="converter-pane"><div className="pane-heading"><label htmlFor="converter-input">JSON INPUT</label><button onClick={() => { setConverterInput(''); setConverterOutput(''); setConverterError('') }}><X size={13} /> Clear</button></div><textarea id="converter-input" className="code-editor converter-editor" value={converterInput} onChange={(event) => setConverterInput(event.target.value)} onKeyDown={(event) => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); void runConverter() } }} placeholder="Paste JSON here…" spellCheck={false} /><div className="pane-footer"><span>{converterInput.length} characters</span><button onClick={loadExample}><WandSparkles size={12} /> Example</button></div></div>
               <div className="converter-actions"><button className="convert-button" onClick={() => void runConverter()} aria-label={`Run JSON ${jsonMode}`}><ArrowLeftRight size={17} /></button><button className="convert-text-button" onClick={() => void runConverter()}>{jsonMode === 'format' ? 'Format JSON' : jsonMode === 'minify' ? 'Minify JSON' : 'Validate JSON'} <span>Ctrl / ⌘ ↵</span></button></div>
               <div className="converter-pane output-pane" aria-live="polite"><div className="pane-heading"><span>{jsonMode === 'validate' ? 'VALIDATION' : 'OUTPUT'}</span><button disabled={!converterOutput} onClick={() => void copyText(converterOutput)}>{copied ? <Check size={13} /> : <Copy size={13} />}{copied ? 'Copied' : 'Copy'}</button></div>{converterError ? <div className="converter-error" role="alert"><X size={15} />{converterError}</div> : converterOutput ? <pre className={`code-editor converter-output ${jsonMode === 'validate' ? 'validation-output' : ''}`}>{converterOutput}</pre> : <div className="output-placeholder"><span><TerminalSquare size={18} /></span><b>Output appears here</b><small>{jsonMode === 'validate' ? 'JSON validity will be reported here' : 'Your input is processed locally'}</small></div>}<div className="pane-footer"><span>{converterOutput ? `${converterOutput.length} characters` : 'Waiting for input'}</span><button onClick={() => setConverterOutput('')}><RotateCcw size={12} /> Reset</button></div></div></div>
@@ -400,7 +429,7 @@ function App() {
           <div className="page-heading converter-heading"><div><div className="eyebrow"><span className="eyebrow-mark"><Code2 size={12} /></span> BACKEND WORKFLOWS <span className="eyebrow-separator">/</span> JAVA</div><h1>JSON to Java models</h1><p>Generate nested Java records or POJOs from a JSON object, entirely in your browser.</p></div><button className="button button-secondary sample-button" onClick={loadExample}><WandSparkles size={15} /> Load example</button></div>
           <section className="converter-workspace json-workspace java-workspace">
             <div className="converter-toolbar java-toolbar">
-              <div className="converter-title"><span className="converter-title-icon"><Code2 size={17} /></span><div><b>Java model generator</b><small>Client-side · no data uploaded</small></div></div>
+              <div className="converter-title"><span className="converter-title-icon"><Code2 size={17} /></span><div><b>Java model generator</b><small>Private processing · your input stays in this tab</small></div></div>
               <div className="java-controls">
                 <label htmlFor="java-class-name">Root class <input id="java-class-name" className="java-class-input" value={javaClassName} onChange={(event) => { setJavaClassName(event.target.value); setJavaOutput(''); setJavaError('') }} /></label>
                 <div className="json-mode-tabs" role="tablist" aria-label="Java model style">
@@ -430,7 +459,7 @@ function App() {
             <button role="tab" aria-selected={encodingFormat === 'base64'} className={encodingFormat === 'base64' ? 'active' : ''} onClick={() => setEncodingFormat('base64')}><span className="encoding-format-icon"><ArrowUpDown size={17} /></span><span><b>Base64</b><small>Standard format</small></span></button>
             <button role="tab" aria-selected={encodingFormat === 'base128'} className={encodingFormat === 'base128' ? 'active' : ''} onClick={() => setEncodingFormat('base128')}><span className="encoding-format-icon"><Binary size={17} /></span><span><b>Base128</b><small>JStack custom</small></span></button>
           </div>
-          <section className="converter-workspace json-workspace"><div className="converter-toolbar"><div className="converter-title"><span className="converter-title-icon">{encodingFormat === 'base64' ? <ArrowUpDown size={17} /> : <Binary size={17} />}</span><div><b>{encodingFormat === 'base64' ? 'Base64 text converter' : 'Base128 converter'}</b><small>Client-side · no data uploaded</small></div></div><div className="json-mode-tabs" role="tablist" aria-label={`${encodingFormat} operation`}>{(['encode', 'decode'] as const).map((mode) => <button key={mode} role="tab" aria-selected={encodingMode === mode} className={encodingMode === mode ? 'active' : ''} onClick={() => setEncodingMode(mode)}>{mode}</button>)}</div></div>
+          <section className="converter-workspace json-workspace"><div className="converter-toolbar"><div className="converter-title"><span className="converter-title-icon">{encodingFormat === 'base64' ? <ArrowUpDown size={17} /> : <Binary size={17} />}</span><div><b>{encodingFormat === 'base64' ? 'Base64 text converter' : 'Base128 converter'}</b><small>Private processing · your input stays in this tab</small></div></div><div className="json-mode-tabs" role="tablist" aria-label={`${encodingFormat} operation`}>{(['encode', 'decode'] as const).map((mode) => <button key={mode} role="tab" aria-selected={encodingMode === mode} className={encodingMode === mode ? 'active' : ''} onClick={() => setEncodingMode(mode)}>{mode}</button>)}</div></div>
             <div className="converter-editors"><div className="converter-pane"><div className="pane-heading"><label htmlFor={encodingFormat === 'base64' ? 'base64-input' : 'base128-input'}>{encodingMode === 'encode' ? 'PLAIN TEXT' : `${encodingFormat.toUpperCase()} INPUT`}</label><button onClick={clearEncoding}><X size={13} /> Clear</button></div><textarea id={encodingFormat === 'base64' ? 'base64-input' : 'base128-input'} className="code-editor converter-editor" value={encodingInput} onChange={(event) => setEncodingInput(event.target.value)} onKeyDown={(event) => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); runEncoding() } }} placeholder={encodingMode === 'encode' ? 'Type or paste plain text…' : encodingFormat === 'base64' ? 'Paste standard Base64…' : 'Paste JStack Base128 Braille text…'} spellCheck={false} /><div className="pane-footer"><span>{encodingInput.length} characters</span><button onClick={loadExample}><WandSparkles size={12} /> Example</button></div></div>
               <div className="converter-actions"><button className="convert-button" onClick={runEncoding} aria-label={`Run ${encodingFormat} ${encodingMode}`}><ArrowLeftRight size={17} /></button><button className="convert-text-button" onClick={runEncoding}>{encodingMode === 'encode' ? `Encode to ${encodingFormat === 'base64' ? 'Base64' : 'Base128'}` : `Decode ${encodingFormat === 'base64' ? 'Base64' : 'Base128'}`} <span>Ctrl / ⌘ ↵</span></button></div>
               <div className="converter-pane output-pane"><div className="pane-heading"><span>OUTPUT</span><button disabled={!encodingOutput} onClick={() => void copyText(encodingOutput)}>{copied ? <Check size={13} /> : <Copy size={13} />}{copied ? 'Copied' : 'Copy'}</button></div>{encodingError ? <div className="converter-error"><X size={15} />{encodingError}</div> : encodingOutput ? <pre className="code-editor converter-output">{encodingOutput}</pre> : <div className="output-placeholder"><span><TerminalSquare size={18} /></span><b>Output appears here</b><small>{encodingFormat === 'base64' ? 'Standard Base64 output' : 'JStack’s printable Braille alphabet'}</small></div>}<div className="pane-footer"><span>{encodingOutput ? `${encodingOutput.length} characters` : 'Waiting for input'}</span><button onClick={resetEncodingOutput}><RotateCcw size={12} /> Reset</button></div></div></div>
@@ -438,20 +467,32 @@ function App() {
           {encodingFormat === 'base128' && <div className="java-note date-note"><CircleHelp size={15} /><span>JStack Base128 is custom, not a universal standard. Use it only with a decoder using the same mapping (U+2801–U+2880).</span></div>}
         </>}
         {section === 'about' && <AboutPage onHome={() => navigate('jwt')} />}
-        <AdSlot />
         <footer className="page-footer"><span>JSTACK <i>·</i> DEVELOPER TOOLS</span><div><a href="/guide">Guide</a><a href="/about">About</a><a href="/contact">Contact</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></div></footer>
+          </div>
+          <AdSlot />
+        </div>
       </main>
     </div>
   </div>
 }
 
 function AdSlot() {
-  return <aside id="ad-slot-responsive" className="ad-slot" aria-label="Advertisement" data-ad-placement="below-tools">
-    <span className="ad-slot-label">ADVERTISEMENT</span>
-    {import.meta.env.DEV && <div className="ad-slot-preview" aria-hidden="true">
-      <span>Responsive ad placement</span>
-      <small>AdSense publisher and slot IDs required before launch</small>
-    </div>}
+  return <aside id="ad-slot-responsive" className="ad-slot" aria-label="Advertisement" data-ad-placement="sidebar">
+    <span className="ad-slot-label"><Megaphone size={16} /> Advertisement</span>
+    <div className="ad-slot-preview" aria-hidden="true">
+      <Image size={44} />
+      <b>300 × 250</b>
+      <span>Reserved ad space</span>
+    </div>
+  </aside>
+}
+
+function TopAdSlot() {
+  return <aside id="ad-slot-top" className="top-ad-slot" aria-label="Advertisement" data-ad-placement="top-banner">
+    <span className="top-ad-slot-label">ADVERTISEMENT</span>
+    <div className="top-ad-slot-body">
+      <span>Reserved responsive ad space</span>
+    </div>
   </aside>
 }
 
@@ -467,7 +508,19 @@ function KeyGenerator({ onGenerate }: { onGenerate: (algorithm: string) => Promi
 }
 
 function AboutPage({ onHome }: { onHome: () => void }) {
-  return <div className="info-page about-page"><div className="eyebrow"><span className="eyebrow-mark"><BookOpenText size={12} /></span> ABOUT <span className="eyebrow-separator">/</span> PRIVACY</div><h1>JWT and data tools for developers.</h1><p className="info-intro">JStack brings a JWT/JWE workbench, JSON formatter/minifier/validator, JSON-to-Java model generator, and Base64 and custom Base128 text converters together in one browser-based workspace.</p><div className="about-grid"><article><span><LockKeyhole size={17} /></span><h2>Privacy</h2><p>Tool inputs are processed in your browser and are not sent to a JStack application backend or stored in local storage. The hosting provider still processes normal web requests. <a href="/privacy.html">Read the privacy policy</a></p></article><article><span><ShieldCheck size={17} /></span><h2>JWT security</h2><p>Decoding only reveals content; it does not verify signatures. Verification does not make an authorization decision. A signed JWT is not encrypted.</p></article><article><span><Braces size={17} /></span><h2>Data formats</h2><p>JSON validation checks syntax, not a schema. Java models are inferred from one sample, not schema-validated. Base64 is not encryption. JStack Base128 is a custom format and may not interoperate with other tools. <a href="/guide.html">Read the developer guide</a></p></article><article><span><CircleHelp size={17} /></span><h2>Contact</h2><p><a href="mailto:shaikmukhuran@gmail.com">shaikmukhuran@gmail.com</a><br /><a href="tel:+17207521486">720-752-1486</a></p></article></div><div className="policy-disclaimer"><b>Contact and legal information</b><p>Review the <a href="/terms.html">Terms of Use</a> and <a href="/privacy.html">Privacy Policy</a> for the hosting and data practices that apply to the deployed site.</p></div><button className="button button-secondary back-tool" onClick={onHome}><ArrowLeftRight size={14} /> Tool workspace</button></div>
+  return <div className="info-page about-page">
+    <div className="eyebrow"><span className="eyebrow-mark"><BookOpenText size={12} /></span> ABOUT JSTACK</div>
+    <h1>Java developer tools for everyday backend work.</h1>
+    <p className="info-intro">JStack brings practical JWT, JSON, Java model, and text-encoding tools together in one easy-to-use workspace.</p>
+    <div className="about-grid">
+      <article><span><ShieldCheck size={17} /></span><h2>JWT and JWE tools</h2><p><a href="/jwt-decoder">Decode JWTs</a>, sign and verify JWS tokens, or encrypt supported JWE formats. Decoding reveals content; it does not verify a token or authorize access.</p></article>
+      <article><span><Braces size={17} /></span><h2>JSON and Java</h2><p><a href="/json-formatter">Format JSON</a>, check its syntax, or <a href="/json-to-java">generate Java records and POJOs</a> from an example object. Generated types are an inference, not a schema.</p></article>
+      <article><span><ArrowUpDown size={17} /></span><h2>Text encoders</h2><p>Convert UTF-8 text with <a href="/base64-converter">standard Base64</a> or JStack’s custom Base128 format. Base64 is not encryption, and Base128 is not a universal standard.</p></article>
+      <article><span><LockKeyhole size={17} /></span><h2>Privacy and safety</h2><p>Tool inputs are processed in this browser and are not sent to a JStack application backend or stored. Your theme preference is saved locally. <a href="/privacy.html">Read the privacy policy</a>.</p></article>
+    </div>
+    <div className="policy-disclaimer"><b>Need help?</b><p>See the <a href="/guide.html">developer guide</a> for security basics and common error fixes, or <a href="/contact.html">contact JStack</a>. Never send production tokens, passwords, or private keys.</p></div>
+    <button className="button button-secondary back-tool" onClick={onHome}><ArrowLeftRight size={14} /> Open the tool workspace</button>
+  </div>
 }
 
 export default App

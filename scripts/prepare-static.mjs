@@ -209,14 +209,15 @@ for (const tool of toolPages) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="${escapeHtml(tool.description)}">
-  <meta name="theme-color" content="#245c4e">
+  <meta name="theme-color" content="#e1f0df">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/policy.css">
+  <script src="/theme.js" defer></script>
   <title>${escapeHtml(tool.title)}</title>
   <script type="application/ld+json">${structuredData}</script>
 </head>
 <body>
-  <header><a class="brand" href="/">jstack<span>.</span></a><nav aria-label="Main navigation"><a href="/">Tools</a><a href="/guide">Guide</a><a href="/about">About</a></nav></header>
+  <header><a class="brand" href="/">JStack</a><nav aria-label="Main navigation"><a href="/">Tools</a><a href="/guide">Guide</a><a href="/about">About</a><button class="theme-toggle" type="button" data-theme-toggle><span class="theme-toggle-icon" aria-hidden="true">◐</span><span class="theme-toggle-label">Light theme</span></button></nav></header>
   <main>
     <div class="eyebrow">JSTACK / DEVELOPER TOOLS</div>
     <h1>${escapeHtml(tool.heading)}</h1>
@@ -291,7 +292,7 @@ for (const file of htmlFiles) {
     }
     html = html.replace('</head>', `  <script type="application/ld+json">${JSON.stringify(websiteData).replace(/</g, '\\u003c')}</script>\n</head>`)
   }
-  await writeFile(filePath, html)
+  await writeFile(filePath, html.replace(/\r\n?/g, '\n'))
 }
 
 const robotsPath = join(outputDirectory, 'robots.txt')

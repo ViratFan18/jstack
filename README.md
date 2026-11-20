@@ -39,19 +39,9 @@ Set `VITE_SITE_URL` in Cloudflare Pages to the exact production HTTPS origin (`h
 
 You can deploy from the Cloudflare dashboard by connecting the Git repository; no backend, database, Wrangler CLI, or server function is required.
 
-## Deploy to Netlify
-
-Connect the repository in Netlify. Set `VITE_SITE_URL` to the production HTTPS origin in the site's build environment. The included `netlify.toml` sets the build command to `npm run build`, publishes `dist`, and routes app navigation to the frontend.
-
-## Deploy to Vercel
-
-Import the repository in Vercel. Set `VITE_SITE_URL` to the production HTTPS origin. The Vite framework preset uses `npm run build` and `dist`; `vercel.json` supplies the SPA rewrite.
-
-Both hosts can also deploy the same static build with their CLI. Use the `dist` folder as the publish/output directory.
-
 ## Strict Publisher Review
 
-Current status: the app reserves a responsive ad placement below the tools, but does not load AdSense or serve ads. Configure a valid publisher ID, ad unit, and required consent signaling before enabling ads; `public/ads.txt` contains the publisher seller record and must be verified by the operator. No analytics or consent-management platform is configured. This is not an AdSense approval check; approval and revenue are not guaranteed.
+Current status: the app reserves boxed top-banner and sidebar ad placements, but does not load AdSense or serve ads. Configure a valid publisher ID, ad unit, and required consent signaling before enabling ads; `public/ads.txt` contains the publisher seller record and must be verified by the operator. No analytics or consent-management platform is configured. This is not an AdSense approval check; approval and revenue are not guaranteed.
 
 Before enabling ads or applying, complete these operator-owned steps:
 

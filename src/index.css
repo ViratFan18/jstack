@@ -5,62 +5,58 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-optical-sizing: auto;
-  font-weight: 400;
-  color: #edf4f8;
-  background: #0b1017;
+  font-weight: 500;
+  color: #0e120f;
+  background: #e1f0df;
   font-size: 14px;
-  --page: #0b1017;
-  --surface: #111925;
-  --surface-alt: #172230;
-  --ink: #edf4f8;
-  --muted: #a1afc0;
-  --subtle: #74849a;
-  --line: #263448;
-  --line-strong: #3a4b61;
-  --green: #65e4c5;
-  --green-dark: #163f3b;
-  --green-soft: #15322f;
-  --lime: #d7ff70;
-  --lime-soft: #29351f;
-  --coral: #ff9b7a;
-  --coral-soft: #402923;
-  --blue: #9ab5ff;
-  --blue-soft: #202d47;
-  --red: #ff8585;
-  --red-soft: #402528;
-  --shadow: 0 18px 48px rgba(0, 0, 0, 0.24);
+  --page: #e1f0df;
+  --surface: #ffffff;
+  --surface-alt: #f5faf3;
+  --ink: #0e120f;
+  --muted: #202a23;
+  --subtle: #38483d;
+  --line: #cddfca;
+  --line-strong: #aec8aa;
+  --green: #21834a;
+  --green-dark: #17663a;
+  --green-soft: #e2f2e3;
+  --lime: #688d37;
+  --lime-soft: #edf4df;
+  --coral: #a74d38;
+  --coral-soft: #fff0e9;
+  --blue: #4b6fae;
+  --blue-soft: #eaf0fa;
+  --red: #b94c5b;
+  --red-soft: #fff0f1;
+  --shadow: 7px 7px 20px rgba(92, 130, 89, .14), -7px -7px 20px rgba(255, 255, 255, .78);
   --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-}
-
-:root[data-theme='light'] {
-  color-scheme: light;
-  color: #182332;
-  background: #f4f7fb;
-  --page: #f4f7fb;
-  --surface: #ffffff;
-  --surface-alt: #f1f5fa;
-  --ink: #182332;
-  --muted: #59697d;
-  --subtle: #8492a3;
-  --line: #e0e7f0;
-  --line-strong: #cbd6e4;
-  --green: #087f71;
-  --green-dark: #07584f;
-  --green-soft: #e1f5ef;
-  --lime: #c8ed5c;
-  --lime-soft: #f1f7dc;
-  --coral: #c45b3e;
-  --coral-soft: #fff0e9;
-  --blue: #526bc3;
-  --blue-soft: #edf0ff;
-  --red: #bd4449;
-  --red-soft: #fff0ef;
-  --shadow: 0 18px 48px rgba(35, 54, 80, 0.08);
+  color: #e8eef5;
+  background: #111b29;
+  --page: #111b29;
+  --surface: #182536;
+  --surface-alt: #202f42;
+  --ink: #e8eef5;
+  --muted: #acb9c9;
+  --subtle: #8595a9;
+  --line: #2a3b50;
+  --line-strong: #40546c;
+  --green: #72d9b2;
+  --green-dark: #1d5b4b;
+  --green-soft: #203d3d;
+  --lime: #d5e7a0;
+  --lime-soft: #364334;
+  --coral: #f0a68d;
+  --coral-soft: #463637;
+  --blue: #9dbcf2;
+  --blue-soft: #263951;
+  --red: #ff9999;
+  --red-soft: #482f39;
+  --shadow: 0 16px 42px rgba(4, 12, 24, 0.18);
 }
 
 * { box-sizing: border-box; }

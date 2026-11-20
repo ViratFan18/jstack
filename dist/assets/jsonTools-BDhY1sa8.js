@@ -1,1 +1,0 @@
-function e(e){return JSON.stringify(JSON.parse(e),null,2)}function t(e){return JSON.stringify(JSON.parse(e))}function n(e){try{let t=JSON.parse(e);return{valid:!0,kind:t===null?`null`:Array.isArray(t)?`array`:typeof t}}catch(e){return{valid:!1,error:e instanceof Error?e.message:`Invalid JSON.`}}}export{e as formatJson,t as minifyJson,n as validateJson};
