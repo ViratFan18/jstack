@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   ArrowLeftRight, ArrowUpDown, Binary, BookOpenText, Braces, Check, ChevronDown, CircleHelp,
-  Code2, Copy, FileKey2, Grid2X2, Image, KeyRound, LockKeyhole, Megaphone, Menu, Moon,
+  Code2, Copy, FileKey2, KeyRound, LockKeyhole, Menu, Moon,
   RotateCcw, ShieldCheck, Sun, TerminalSquare, WandSparkles, X,
 } from 'lucide-react'
 import { JWE_ALGORITHMS, JWS_ALGORITHMS } from './lib/jwt-constants'
@@ -139,6 +139,8 @@ function App() {
   const [base128Output, setBase128Output] = useState('')
   const [base128Error, setBase128Error] = useState('')
   const [copied, setCopied] = useState(false)
+  const [advancedJwtOpen, setAdvancedJwtOpen] = useState(false)
+  const [toolSearch, setToolSearch] = useState('')
   const jweMode = jwtMode === 'Encrypt' || jwtMode === 'Decrypt'
   const isHomepage = section === 'jwt' && !requestedTool
 
@@ -146,7 +148,17 @@ function App() {
     const theme = darkMode ? 'dark' : 'light'
     document.documentElement.dataset.theme = theme
     window.localStorage.setItem('jstack-theme-v2', theme)
+    const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+    if (themeColor) themeColor.content = darkMode ? '#131816' : '#F7F9F7'
   }, [darkMode])
+  useEffect(() => {
+    if (!token && !secret) return
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+    }
+    window.addEventListener('beforeunload', warnBeforeUnload)
+    return () => window.removeEventListener('beforeunload', warnBeforeUnload)
+  }, [token, secret])
   useEffect(() => {
     const activeRoute = requestedTool ? toolRoutes[requestedTool] : undefined
     const routeMatchesState = activeRoute?.section === section
@@ -186,11 +198,33 @@ function App() {
       canonical.rel = 'canonical'
       document.head.append(canonical)
     }
-    canonical.href = new URL('/', window.location.origin).href
+    const canonicalPath = route && requestedTool
+      ? `/${requestedTool}`
+      : isHome
+        ? '/'
+        : section === 'java'
+          ? '/json-to-java'
+          : section === 'base64'
+            ? encodingFormat === 'base128' ? '/base128-converter' : '/base64-converter'
+            : section === 'json'
+              ? `/json-${jsonMode === 'format' ? 'formatter' : jsonMode === 'minify' ? 'minifier' : 'validator'}`
+              : section === 'jwt'
+                ? jwtMode === 'Encode & sign' ? '/jwt-encoder'
+                  : jwtMode === 'Verify' ? '/jwt-verifier'
+                    : jwtMode === 'Encrypt' ? '/jwe-encryptor'
+                      : jwtMode === 'Decrypt' ? '/jwe-decryptor'
+                        : jwtMode === 'Keys' ? '/jwt-key-generator'
+                          : '/jwt-decoder'
+                : section === 'about' ? '/about' : '/'
+    canonical.href = new URL(canonicalPath, window.location.origin).href
     updateMeta('property', 'og:url', canonical.href)
   }, [section, jwtMode, jsonMode, base64Mode, base128Mode, encodingFormat, requestedTool])
 
   const navigate = (next: Section) => { setSection(next); setSidebarOpen(false) }
+  const matchesToolSearch = (names: string) => {
+    const query = toolSearch.trim().toLowerCase()
+    return !query || names.toLowerCase().includes(query)
+  }
   const runJwt = async () => {
     setBusy(true); setNotice(null); setDecoded(null); setJwtResult('')
     try {
@@ -347,24 +381,13 @@ function App() {
 
   return <div className="app-shell">
     <header className="topbar">
-      <button className="mobile-menu icon-button" aria-label="Open navigation" onClick={() => setSidebarOpen(!sidebarOpen)}><Menu size={19} /></button>
+      <button className="mobile-menu icon-button" aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'} title={sidebarOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={sidebarOpen} onClick={() => setSidebarOpen(!sidebarOpen)}><Menu size={19} /></button>
       <button className="brand" onClick={() => navigate('jwt')} aria-label="JStack home"><span className="brand-mark"><Code2 size={18} /></span><span>JStack</span></button>
       <nav className="topbar-nav" aria-label="Site navigation">
-        <details className="tool-dropdown">
-          <summary><Grid2X2 size={16} /> Developer Tools <ChevronDown size={14} /></summary>
-          <div className="tool-dropdown-menu">
-            <button onClick={(event) => { navigate('jwt'); event.currentTarget.closest('details')?.removeAttribute('open') }}><ShieldCheck size={15} /> JWT Workbench</button>
-            <button onClick={(event) => { navigate('base64'); event.currentTarget.closest('details')?.removeAttribute('open') }}><ArrowUpDown size={15} /> Base64 / 128</button>
-            <button onClick={(event) => { navigate('json'); event.currentTarget.closest('details')?.removeAttribute('open') }}><Braces size={15} /> JSON Studio</button>
-            <button onClick={(event) => { navigate('java'); event.currentTarget.closest('details')?.removeAttribute('open') }}><Code2 size={15} /> JSON to Java</button>
-          </div>
-        </details>
         <details className="tool-dropdown resource-dropdown">
           <summary>Resources <ChevronDown size={14} /></summary>
           <div className="tool-dropdown-menu">
             <a href="/guide"><BookOpenText size={15} /> Developer guide</a>
-            <a href="/jwt-decoder"><ShieldCheck size={15} /> JWT decoder guide</a>
-            <a href="/json-to-java"><Code2 size={15} /> JSON to Java guide</a>
           </div>
         </details>
         <a href="/about">About</a>
@@ -376,35 +399,28 @@ function App() {
     </header>
     <div className="app-body">
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
-        <div className="sidebar-topline"><span className="sidebar-workspace-label">YOUR TOOLKIT</span></div>
+        <div className="sidebar-topline"><span className="sidebar-workspace-label">TOOLS</span></div>
         <nav aria-label="Main navigation">
-          <p className="nav-caption">SECURITY</p>
-          <button className={`nav-item ${section === 'jwt' ? 'active' : ''}`} onClick={() => navigate('jwt')}><span className="nav-icon"><ShieldCheck size={17} /></span><span className="nav-item-copy"><b>JWT Workbench</b></span></button>
-          <p className="nav-caption nav-caption-spaced">ENCODING</p>
-          <button className={`nav-item ${section === 'base64' ? 'active' : ''}`} onClick={() => navigate('base64')}><span className="nav-icon"><ArrowUpDown size={17} /></span><span className="nav-item-copy"><b>Base64 / 128</b></span></button>
-          <p className="nav-caption nav-caption-spaced">FORMATTING</p>
-          <button className={`nav-item ${section === 'json' ? 'active' : ''}`} onClick={() => navigate('json')}><span className="nav-icon"><Braces size={17} /></span><span className="nav-item-copy"><b>JSON Studio</b></span></button>
-          <p className="nav-caption nav-caption-spaced">JAVA</p>
-          <button className={`nav-item ${section === 'java' ? 'active' : ''}`} onClick={() => navigate('java')}><span className="nav-icon"><Code2 size={17} /></span><span className="nav-item-copy"><b>JSON to Java</b></span></button>
-          <p className="nav-caption nav-caption-spaced">INFO</p>
-          <button className={`nav-item nav-item-about ${section === 'about' ? 'active' : ''}`} onClick={() => navigate('about')}><span className="nav-icon"><BookOpenText size={17} /></span><span className="nav-item-copy"><b>About</b></span><span className="nav-arrow">↗</span></button>
+          <label className="nav-tool-search"><span className="sr-only">Filter tools</span><input value={toolSearch} onChange={(event) => setToolSearch(event.target.value)} placeholder="Filter tools..." /></label>
+          {matchesToolSearch('jwt workbench jws jwe security') && <p className="nav-caption">SECURITY</p>}
+          {matchesToolSearch('jwt workbench jws jwe security') && <button className={`nav-item nav-item-jwt ${section === 'jwt' ? 'active' : ''}`} onClick={() => navigate('jwt')}><span className="nav-icon"><ShieldCheck size={17} /></span><span className="nav-item-copy"><b>JWT Workbench</b></span></button>}
+          {matchesToolSearch('base64 base128 encoding text') && <><p className="nav-caption nav-caption-spaced">ENCODING</p><button className={`nav-item nav-item-base64 ${section === 'base64' ? 'active' : ''}`} onClick={() => navigate('base64')}><span className="nav-icon"><ArrowUpDown size={17} /></span><span className="nav-item-copy"><b>Base64 / 128</b></span></button></>}
+          {matchesToolSearch('json studio formatter validator minifier') && <><p className="nav-caption nav-caption-spaced">FORMATTING</p><button className={`nav-item nav-item-json ${section === 'json' ? 'active' : ''}`} onClick={() => navigate('json')}><span className="nav-icon"><Braces size={17} /></span><span className="nav-item-copy"><b>JSON Studio</b></span></button></>}
+          {matchesToolSearch('json to java java pojo record model') && <><p className="nav-caption nav-caption-spaced">JAVA</p><button className={`nav-item nav-item-java ${section === 'java' ? 'active' : ''}`} onClick={() => navigate('java')}><span className="nav-icon"><Code2 size={17} /></span><span className="nav-item-copy"><b>JSON to Java</b></span></button></>}
         </nav>
-        <div className="sidebar-bottom"><div className="privacy-mini"><span className="privacy-shield"><LockKeyhole size={15} /></span><span className="privacy-copy"><b>Private by design</b><small>Your tool inputs stay in this tab.</small></span><span className="privacy-indicator" aria-hidden="true" /></div><div className="sidebar-foot"><span>JSTACK</span><span className="sidebar-version">FAST · SECURE · FREE</span></div></div>
       </aside>
       {sidebarOpen && <button className="sidebar-scrim" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
       <main className="main-content">
         <div className="page-layout">
           <div className="page-primary">
-        <TopAdSlot />
         {section === 'jwt' && <>
-          <div className="page-heading"><div><div className="eyebrow"><span className="eyebrow-mark"><KeyRound size={12} /></span> TOKEN WORKSPACE <span className="eyebrow-separator">/</span> JWS + JWE</div><h1>{isHomepage ? 'JWT Workbench' : jwtMode === 'Decode' ? 'JWT decoder' : jwtMode === 'Encode & sign' ? 'JWT encoder and signer' : jwtMode === 'Verify' ? 'JWT signature verifier' : jwtMode === 'Encrypt' ? 'JWE encryptor' : jwtMode === 'Decrypt' ? 'JWE decryptor' : 'JWT key generator'}</h1><p>{isHomepage ? 'Encode, sign and verify JSON Web Tokens (JWT) with ease.' : jwtMode === 'Decode' ? 'Read a JWT header and claims payload. Decoding does not verify its signature.' : jwtMode === 'Encode & sign' ? 'Create a signed JWT with a supported algorithm and key.' : jwtMode === 'Verify' ? 'Check a JWT signature and registered claims against a selected key.' : jwtMode === 'Encrypt' ? 'Encrypt a JSON payload using a supported JWE algorithm.' : jwtMode === 'Decrypt' ? 'Decrypt a compact JWE using its matching key.' : 'Generate compatible signing or encryption key material.'}</p></div><button className="button button-secondary sample-button" onClick={loadExample}><WandSparkles size={15} /> Load example</button></div>
-          <div className="jwt-tabs" role="tablist" aria-label="JWT operations">{jwtModes.map((mode) => <button key={mode} role="tab" aria-selected={jwtMode === mode} className={jwtMode === mode ? 'active' : ''} onClick={() => { setJwtMode(mode); setNotice(null); setDecoded(null) }}>{mode === 'Encrypt' || mode === 'Decrypt' ? <LockKeyhole size={14} /> : mode === 'Keys' ? <FileKey2 size={14} /> : null}{mode}</button>)}</div>
-          <div className="privacy-callout"><LockKeyhole size={15} /><span><b>Private by design.</b> Tokens, keys and payloads are processed in this tab and are not uploaded or saved.</span><button title="Operations are performed in your browser." aria-label="About private processing"><CircleHelp size={15} /></button></div>
-          <div className="workbench-grid">
+          <div className="page-heading"><div><div className="eyebrow"><span className="eyebrow-mark"><KeyRound size={12} /></span> Tools <span className="eyebrow-separator">/</span> JWT</div><h1>{isHomepage ? 'JWT Workbench' : jwtMode === 'Decode' ? 'JWT Decoder' : jwtMode === 'Encode & sign' ? 'JWT Encoder' : jwtMode === 'Verify' ? 'JWT Verifier' : jwtMode === 'Encrypt' ? 'JWE Encryptor' : jwtMode === 'Decrypt' ? 'JWE Decryptor' : 'JWT Keys'}</h1><p>{isHomepage ? 'Work with signed and encrypted tokens locally in your browser.' : jwtMode === 'Decode' ? 'Inspect a compact JWT. Decoding does not verify its signature.' : jwtMode === 'Encode & sign' ? 'Create a signed JWS token with a selected algorithm and key.' : jwtMode === 'Verify' ? 'Verify the signature and registered claims. Authorization remains your application’s responsibility.' : jwtMode === 'Encrypt' ? 'Encrypt JSON with RSA-OAEP-256/A256GCM or direct A256GCM.' : jwtMode === 'Decrypt' ? 'Decrypt a JWE with the matching algorithm and key.' : 'Generate supported JWT key material locally.'}</p></div><button className="button button-secondary sample-button" onClick={loadExample}><WandSparkles size={15} /> Example</button></div>
+          <div className="jwt-tabs" role="tablist" aria-label="JWT operations">{jwtModes.map((mode) => <button key={mode} id={`jwt-tab-${mode.toLowerCase().replace(/[^a-z]+/g, '-')}`} role="tab" aria-controls="jwt-workbench-panel" aria-selected={jwtMode === mode} tabIndex={jwtMode === mode ? 0 : -1} className={jwtMode === mode ? 'active' : ''} onClick={() => { setJwtMode(mode); setNotice(null); setDecoded(null) }}>{mode === 'Encrypt' || mode === 'Decrypt' ? <LockKeyhole size={14} /> : mode === 'Keys' ? <FileKey2 size={14} /> : null}{mode}</button>)}</div>
+          <div className="workbench-grid" id="jwt-workbench-panel" role="tabpanel">
             <section className="editor-column">
               {(jwtMode === 'Decode' || jwtMode === 'Verify' || jwtMode === 'Decrypt') && <div className="field-block token-field"><div className="field-heading"><label htmlFor="jwt-token">{jwtMode === 'Decrypt' ? 'JWE token' : 'Encoded token'}</label><span className="field-meta">{token.trim() ? `${token.trim().length} chars` : 'Paste a compact token'}</span></div><textarea id="jwt-token" className="code-editor token-editor" value={token} onChange={(event) => setToken(event.target.value)} placeholder="eyJhbGciOi..." spellCheck={false} /><div className="field-tools"><button onClick={() => setToken('')}><RotateCcw size={13} /> Clear</button><button onClick={loadExample}><WandSparkles size={13} /> Example token</button><span>JWT: header.payload.signature</span></div></div>}
               {(jwtMode === 'Encode & sign' || jwtMode === 'Encrypt') && <>{jwtMode === 'Encode & sign' && <div className="field-block"><div className="field-heading"><label htmlFor="jwt-header">JOSE header</label><span className="field-meta">JSON</span></div><textarea id="jwt-header" className="code-editor small-editor" value={header} onChange={(event) => setHeader(event.target.value)} spellCheck={false} /></div>}<div className="field-block"><div className="field-heading"><label htmlFor="jwt-payload">{jwtMode === 'Encrypt' ? 'Plaintext payload' : 'JWT payload'}</label><span className="field-meta">JSON</span></div><textarea id="jwt-payload" className="code-editor payload-editor" value={payload} onChange={(event) => setPayload(event.target.value)} spellCheck={false} /></div>{jwtMode === 'Encode & sign' && <div className="claims-strip"><span>Claims quick-add</span>{['exp', 'nbf', 'iss', 'aud'].map((claim) => <button key={claim} onClick={() => { try { const current = JSON.parse(payload); current[claim] = claim === 'exp' ? Math.floor(Date.now() / 1000) + 3600 : claim === 'nbf' ? Math.floor(Date.now() / 1000) : claim === 'iss' ? 'https://issuer.example' : 'java-api'; setPayload(JSON.stringify(current, null, 2)) } catch { setNotice({ tone: 'error', title: 'Invalid payload JSON', detail: 'Fix the payload before adding a claim.' }) } }}>{claim}</button>)}</div>}</>}
-              {(jwtMode === 'Encode & sign' || jwtMode === 'Verify' || jwtMode === 'Encrypt' || jwtMode === 'Decrypt') && <div className="field-block crypto-settings"><div className="field-heading"><label htmlFor="jwt-algorithm">{jweMode ? 'Key management / content encryption' : 'Signing algorithm'}</label><span className="field-meta">{jweMode ? 'JWE' : 'JWS'}</span></div><div className="settings-row"><select id="jwt-algorithm" value={algorithm} onChange={(event) => setAlgorithm(event.target.value)}>{(jweMode ? JWE_ALGORITHMS : JWS_ALGORITHMS).map((item) => <option key={item} value={item}>{item}</option>)}</select>{jwtMode === 'Verify' && <label className="tolerance-control">Clock tolerance <input type="number" min="0" max="300" value={tolerance} onChange={(event) => setTolerance(event.target.value)} aria-label="Clock tolerance in seconds" /><span>sec</span></label>}</div><div className="field-heading key-label"><label htmlFor="jwt-key">{jweMode ? (jwtMode === 'Encrypt' ? (algorithm.startsWith('dir') ? '256-bit shared key' : 'RSA public key') : (algorithm.startsWith('dir') ? '256-bit shared key' : 'RSA private key')) : algorithm.startsWith('HS') ? 'Shared secret' : jwtMode === 'Verify' ? 'Public key · SPKI' : 'Private key · PKCS#8'}</label><button className="text-action" onClick={() => void generateKey()}><KeyRound size={13} /> Generate key</button></div><textarea id="jwt-key" className={`code-editor key-editor ${secret ? 'key-filled' : ''}`} value={secret} onChange={(event) => setSecret(event.target.value)} placeholder={algorithm.startsWith('HS') || algorithm.startsWith('dir') ? 'Paste secret or generate a secure key…' : '-----BEGIN PUBLIC KEY / PRIVATE KEY-----'} spellCheck={false} /><p className="key-hint">{jweMode ? 'A256GCM needs a 32-byte key. RSA mode needs a matching public/private pair.' : algorithm.startsWith('HS') ? 'HMAC uses the same secret to sign and verify. Keep it private.' : 'Asymmetric signatures use a private key to sign and the matching public key to verify.'}</p></div>}
+              {(jwtMode === 'Encode & sign' || jwtMode === 'Verify' || jwtMode === 'Encrypt' || jwtMode === 'Decrypt') && <div className={`field-block crypto-settings ${advancedJwtOpen ? 'advanced-open' : ''}`}><div className="field-heading"><label htmlFor="jwt-algorithm">{jweMode ? 'Key management / content encryption' : 'Signing algorithm'}</label><span className="field-meta">{jweMode ? 'JWE' : 'JWS'}</span></div><div className="settings-row"><select id="jwt-algorithm" value={algorithm} onChange={(event) => setAlgorithm(event.target.value)}>{(jweMode ? JWE_ALGORITHMS : JWS_ALGORITHMS).map((item) => <option key={item} value={item}>{item}</option>)}</select><button className="text-action advanced-toggle" type="button" aria-expanded={advancedJwtOpen} onClick={() => setAdvancedJwtOpen(!advancedJwtOpen)}><ChevronDown size={13} /> Advanced</button></div>{advancedJwtOpen && jwtMode === 'Verify' && <label className="tolerance-control">Clock tolerance <input type="number" min="0" max="300" value={tolerance} onChange={(event) => setTolerance(event.target.value)} aria-label="Clock tolerance in seconds" /><span>sec</span></label>}<div className="advanced-key-settings"><div className="field-heading key-label"><label htmlFor="jwt-key">{jweMode ? (jwtMode === 'Encrypt' ? (algorithm.startsWith('dir') ? '256-bit shared key' : 'RSA public key') : (algorithm.startsWith('dir') ? '256-bit shared key' : 'RSA private key')) : algorithm.startsWith('HS') ? 'Shared secret' : jwtMode === 'Verify' ? 'Public key · SPKI' : 'Private key · PKCS#8'}</label><button className="text-action" onClick={() => void generateKey()}><KeyRound size={13} /> Generate key</button></div><textarea id="jwt-key" className={`code-editor key-editor ${secret ? 'key-filled' : ''}`} value={secret} onChange={(event) => setSecret(event.target.value)} placeholder={algorithm.startsWith('HS') || algorithm.startsWith('dir') ? 'Paste secret or generate a secure key…' : '-----BEGIN PUBLIC KEY / PRIVATE KEY-----'} spellCheck={false} /><p className="key-hint">{jweMode ? 'A256GCM needs a 32-byte key. RSA mode needs a matching public/private pair.' : algorithm.startsWith('HS') ? 'HMAC uses the same secret to sign and verify. Keep it private.' : 'Asymmetric signatures use a private key to sign and the matching public key to verify.'}</p></div></div>}
               {jwtMode === 'Keys' && <KeyGenerator onGenerate={async (alg) => { setAlgorithm(alg); await generateKey(alg) }} />}
               {jwtMode !== 'Keys' && <div className="run-row"><button className="button button-primary run-button" onClick={() => void runJwt()} disabled={busy}>{busy ? <span className="spinner" /> : jwtMode === 'Verify' ? <ShieldCheck size={16} /> : jwtMode === 'Decrypt' ? <LockKeyhole size={15} /> : <WandSparkles size={15} />}{jwtMode === 'Decode' ? 'Decode token' : jwtMode === 'Encode & sign' ? 'Sign JWT' : jwtMode === 'Verify' ? 'Verify token' : jwtMode === 'Encrypt' ? 'Encrypt payload' : 'Decrypt token'}</button><span className="run-local">Processed privately in this tab</span></div>}
             </section>
@@ -414,7 +430,7 @@ function App() {
               <div className="result-foot"><span><LockKeyhole size={12} /> No data leaves this browser</span><span>{decoded ? 'JWT · COMPACT SERIALIZATION' : 'READY'}</span></div>
             </section>
           </div>
-          <section className="concept-band"><div><span className="concept-icon"><Braces size={16} /></span><b>Encoding is not encryption</b><p>JWT parts use Base64URL. JWS adds a signature; JWE encrypts content.</p></div><div><span className="concept-icon coral"><ShieldCheck size={16} /></span><b>Verification ≠ authorization</b><p>Check claims and access rules even after signature verification.</p></div><div className="concept-link"><button onClick={() => navigate('about')}>Security notes <span>↗</span></button><small>Understand algorithms and key formats</small></div></section>
+          <div className="privacy-callout"><LockKeyhole size={14} /><span>Processed in this browser. Inputs are not uploaded or saved.</span></div>
         </>}
 
         {section === 'json' && <>
@@ -469,31 +485,10 @@ function App() {
         {section === 'about' && <AboutPage onHome={() => navigate('jwt')} />}
         <footer className="page-footer"><span>JSTACK <i>·</i> DEVELOPER TOOLS</span><div><a href="/guide">Guide</a><a href="/about">About</a><a href="/contact">Contact</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></div></footer>
           </div>
-          <AdSlot />
         </div>
       </main>
     </div>
   </div>
-}
-
-function AdSlot() {
-  return <aside id="ad-slot-responsive" className="ad-slot" aria-label="Advertisement" data-ad-placement="sidebar">
-    <span className="ad-slot-label"><Megaphone size={16} /> Advertisement</span>
-    <div className="ad-slot-preview" aria-hidden="true">
-      <Image size={44} />
-      <b>300 × 250</b>
-      <span>Reserved ad space</span>
-    </div>
-  </aside>
-}
-
-function TopAdSlot() {
-  return <aside id="ad-slot-top" className="top-ad-slot" aria-label="Advertisement" data-ad-placement="top-banner">
-    <span className="top-ad-slot-label">ADVERTISEMENT</span>
-    <div className="top-ad-slot-body">
-      <span>Reserved responsive ad space</span>
-    </div>
-  </aside>
 }
 
 function JsonPanel({ title, value, accent }: { title: string; value: Record<string, unknown>; accent: 'lime' | 'blue' }) {
@@ -519,6 +514,15 @@ function AboutPage({ onHome }: { onHome: () => void }) {
       <article><span><LockKeyhole size={17} /></span><h2>Privacy and safety</h2><p>Tool inputs are processed in this browser and are not sent to a JStack application backend or stored. Your theme preference is saved locally. <a href="/privacy.html">Read the privacy policy</a>.</p></article>
     </div>
     <div className="policy-disclaimer"><b>Need help?</b><p>See the <a href="/guide.html">developer guide</a> for security basics and common error fixes, or <a href="/contact.html">contact JStack</a>. Never send production tokens, passwords, or private keys.</p></div>
+    <section className="faq-section">
+      <div className="faq-heading"><span><CircleHelp size={15} /></span><div><small>COMMON QUESTIONS</small><h2>Frequently asked questions</h2></div></div>
+      <details><summary>Does JStack upload my token or key?</summary><p>No. JWT, JWE, JSON, Java, and text operations run in the current browser tab. Do not paste real production secrets into any shared or public computer.</p></details>
+      <details><summary>Does decoding a JWT verify its signature?</summary><p>No. Decoding only reads the Base64URL header and payload. Signature verification and application authorization are separate operations.</p></details>
+      <details><summary>Is JSON validation the same as schema validation?</summary><p>No. JStack checks JSON syntax and can format or minify it, but it does not enforce API fields, required values, or business rules.</p></details>
+      <details><summary>Is generated Java code ready to ship?</summary><p>It is an inferred starting point. Review names, types, nullability, deserialization annotations, packages, and API compatibility before production use.</p></details>
+      <details><summary>Is JStack Base128 a standard?</summary><p>No. JStack Base128 uses a custom printable mapping, so both encoder and decoder must use the same mapping.</p></details>
+    </section>
+    <section className="changelog-strip"><span><WandSparkles size={15} /></span><div><small>PLATFORM STATUS</small><b>Browser-first tools · JWS/JWE · JSON · Java · Base64</b></div></section>
     <button className="button button-secondary back-tool" onClick={onHome}><ArrowLeftRight size={14} /> Open the tool workspace</button>
   </div>
 }

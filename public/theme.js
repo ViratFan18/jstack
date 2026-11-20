@@ -1,6 +1,8 @@
 const savedTheme = window.localStorage.getItem('jstack-theme-v2')
 const initialTheme = savedTheme === 'dark' ? 'dark' : 'light'
 document.documentElement.dataset.theme = initialTheme
+const themeColor = document.querySelector('meta[name="theme-color"]')
+if (themeColor) themeColor.content = initialTheme === 'dark' ? '#131816' : '#F7F9F7'
 
 for (const button of document.querySelectorAll('[data-theme-toggle]')) {
   const updateButton = (theme) => {
@@ -15,6 +17,7 @@ for (const button of document.querySelectorAll('[data-theme-toggle]')) {
     const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'
     document.documentElement.dataset.theme = theme
     window.localStorage.setItem('jstack-theme-v2', theme)
+    if (themeColor) themeColor.content = theme === 'dark' ? '#131816' : '#F7F9F7'
     updateButton(theme)
   })
 }

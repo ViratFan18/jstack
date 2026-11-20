@@ -209,7 +209,7 @@ for (const tool of toolPages) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="${escapeHtml(tool.description)}">
-  <meta name="theme-color" content="#e1f0df">
+  <meta name="theme-color" content="#F7F9F7">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/policy.css">
   <script src="/theme.js" defer></script>
