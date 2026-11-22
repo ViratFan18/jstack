@@ -779,6 +779,38 @@ test('global command palette searches tools and informational pages with keyboar
   await expect(page.getByRole('heading', { name: 'Base64, Base64URL, and JStack Base128' })).toBeVisible()
 })
 
+test('main search icon and Ctrl+K support flexible search and scrollable results', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 480 })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Search tools and pages' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Search JStack tools' })
+  const search = dialog.getByRole('combobox', { name: 'Search JStack tools and pages' })
+  await search.fill('decoder JWT')
+  await expect(dialog.getByRole('option', { name: /JWT decoder/ })).toBeVisible()
+  await search.press('Enter')
+  await expect(page).toHaveURL(/\/app\/jwt-decoder$/)
+
+  await page.keyboard.press('Control+k')
+  await expect(dialog).toBeVisible()
+  const results = dialog.locator('.command-results')
+  const scrollMetrics = await results.evaluate((node) => ({
+    clientHeight: node.clientHeight,
+    scrollHeight: node.scrollHeight,
+    overflowY: getComputedStyle(node).overflowY,
+  }))
+  expect(scrollMetrics.overflowY).toBe('auto')
+  expect(scrollMetrics.scrollHeight).toBeGreaterThan(scrollMetrics.clientHeight)
+
+  for (let index = 0; index < 20; index += 1) await page.keyboard.press('ArrowDown')
+  const activeResult = dialog.locator('#command-result-20')
+  const activeResultVisible = await activeResult.evaluate((node) => {
+    const result = node.getBoundingClientRect()
+    const list = node.parentElement!.getBoundingClientRect()
+    return result.top >= list.top - 1 && result.bottom <= list.bottom + 1
+  })
+  expect(activeResultVisible).toBe(true)
+})
+
 test('static pages share keyboard search and complete footer navigation without breadcrumbs', async ({ page }) => {
   await page.goto('/learning')
   await page.getByRole('button', { name: 'Search JStack tools and pages' }).click()

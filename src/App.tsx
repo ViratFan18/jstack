@@ -478,6 +478,12 @@ function App() {
     }
   }, [commandOpen])
   useEffect(() => {
+    if (!commandOpen) return
+    commandPanelRef.current
+      ?.querySelector<HTMLElement>(`#command-result-${commandIndex}`)
+      ?.scrollIntoView({ block: 'nearest' })
+  }, [commandOpen, commandIndex])
+  useEffect(() => {
     const warnBeforeUnload = (event: BeforeUnloadEvent) => {
       if (!unsavedInputRef.current) return
       event.preventDefault()
@@ -1117,9 +1123,13 @@ function App() {
     })),
     ...sitePages.map((item) => ({ id: `page-${item.href}`, ...item, group: 'Pages' })),
   ]
+  const commandSearchTerms = commandSearch.trim().toLowerCase().split(/\s+/).filter(Boolean)
   const commandResults = commandCatalog
     .filter((item, index, entries) => entries.findIndex((candidate) => candidate.slug === item.slug && item.slug || candidate.href === item.href && item.href) === index)
-    .filter((item) => `${item.title} ${item.description} ${item.group}`.toLowerCase().includes(commandSearch.trim().toLowerCase()))
+    .filter((item) => {
+      const searchableText = `${item.title} ${item.description} ${item.group}`.toLowerCase()
+      return commandSearchTerms.every((term) => searchableText.includes(term))
+    })
   const runCommand = (item: CommandItem) => {
     setCommandOpen(false)
     setCommandSearch('')
