@@ -18,7 +18,7 @@ const toolPageNames = new Set([
 const cleanPageRoutes: Plugin = {
   name: 'jstack-clean-page-routes',
   configureServer: addWorkspaceRouteFallback,
-  configurePreviewServer: addWorkspaceRouteFallback,
+  configurePreviewServer: addBuiltWorkspaceRouteFallback,
 }
 
 function addWorkspaceRouteFallback(server: ViteDevServer | PreviewServer) {
@@ -37,6 +37,24 @@ function addWorkspaceRouteFallback(server: ViteDevServer | PreviewServer) {
     }
 
     next()
+  })
+}
+
+function addBuiltWorkspaceRouteFallback(server: PreviewServer) {
+  server.middlewares.use((request, response, next) => {
+    if (!request.url) return next()
+
+    const pathname = request.url.split('?')[0].replace(/\/+$/, '')
+    const workspaceRoute = pathname.match(/^\/app\/([^/]+)$/)
+    if (!workspaceRoute || !toolPageNames.has(workspaceRoute[1])) return next()
+
+    const routeHtml = resolve(process.cwd(), 'dist', 'app', workspaceRoute[1], 'index.html')
+    if (!existsSync(routeHtml)) return next()
+
+    response.statusCode = 200
+    response.setHeader('Content-Type', 'text/html; charset=utf-8')
+    response.setHeader('X-Robots-Tag', 'noindex, follow')
+    response.end(readFileSync(routeHtml))
   })
 }
 

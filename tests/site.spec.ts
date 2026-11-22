@@ -179,8 +179,18 @@ test('production deployment artifacts revalidate documents and retain hashed ass
   expect(headers).toMatch(/\/assets\/\*\s+Cache-Control: public, max-age=31536000, immutable/)
   expect(headers).toContain('pagead2.googlesyndication.com')
   expect(redirects).toContain('/* /404.html 404')
-  expect(redirects).toContain('/app/json-formatter /workspace.html 200')
-  expect(redirects).toContain('/blog/jwt-signature-verification /blog-jwt-signature-verification.html 200')
+  expect(redirects).not.toMatch(/^\/(?:blog(?:\/.*)?|app\/.*)\s+\S+\s+200$/m)
+
+  for (const slug of [
+    'jwt-decoder', 'jwt-encoder', 'jwt-verifier', 'jwe-encryptor', 'jwe-decryptor',
+    'jwt-key-generator', 'json-formatter', 'json-minifier', 'json-validator',
+    'json-to-java', 'base64-converter', 'base128-converter',
+  ]) {
+    const routeHtml = await readFile(new URL(`../dist/app/${slug}/index.html`, import.meta.url), 'utf8')
+    expect(routeHtml, `/app/${slug} has a generated route document`).toContain('<div id="root"></div>')
+    expect(routeHtml, `/app/${slug} is excluded from indexing`).toContain('<meta name="robots" content="noindex, follow"')
+    expect(routeHtml, `/app/${slug} does not load ads`).not.toContain('adsbygoogle.js')
+  }
 })
 
 test('AdSense publisher setup is on public pages without loading in the tool workspace', async ({ request }) => {

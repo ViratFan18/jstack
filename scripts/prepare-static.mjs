@@ -1,4 +1,4 @@
-import { readFile, readdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -395,6 +395,13 @@ for (const file of htmlFiles) {
     html = html.replace('</head>', `  <script type="application/ld+json">${JSON.stringify(breadcrumbData).replace(/</g, '\\u003c')}</script>\n</head>`)
   }
   await writeFile(filePath, html.replace(/\r\n?/g, '\n'))
+}
+
+const workspaceHtml = await readFile(join(outputDirectory, 'workspace.html'), 'utf8')
+for (const { slug } of toolPages) {
+  const routeDirectory = join(outputDirectory, 'app', slug)
+  await mkdir(routeDirectory, { recursive: true })
+  await writeFile(join(routeDirectory, 'index.html'), workspaceHtml)
 }
 
 const robotsPath = join(outputDirectory, 'robots.txt')
