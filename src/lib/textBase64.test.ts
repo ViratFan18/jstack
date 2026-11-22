@@ -13,6 +13,12 @@ describe('Base64 text tools', () => {
     expect(decodeBase64Text('SGVsbG8')).toBe('Hello')
   })
 
+  it('round-trips an empty value and rejects ill-formed Unicode instead of replacing it', () => {
+    expect(encodeTextBase64('')).toBe('')
+    expect(decodeBase64Text('')).toBe('')
+    expect(() => encodeTextBase64('\ud800')).toThrow(/unpaired UTF-16 surrogate/i)
+  })
+
   it('rejects Base64URL characters and malformed padding', () => {
     expect(() => decodeBase64Text('SGVsbG8_')).toThrow(/standard Base64/i)
     expect(() => decodeBase64Text('A===')).toThrow(/standard Base64/i)

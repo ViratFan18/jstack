@@ -16,6 +16,7 @@ describe('JStack Base128 text tools', () => {
   it('round-trips empty text', () => {
     expect(encodeTextBase128('')).toBe('')
     expect(decodeBase128Text('')).toBe('')
+    expect(() => encodeTextBase128('\udfff')).toThrow(/unpaired UTF-16 surrogate/i)
   })
 
   it('rejects unknown alphabets, nonzero padding, and invalid UTF-8', () => {

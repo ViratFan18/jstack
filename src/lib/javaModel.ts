@@ -49,6 +49,10 @@ function uniqueName(name: string, used: Set<string>): string {
   return candidate
 }
 
+function accessorSuffix(name: string): string {
+  return `${name[0].toUpperCase()}${name.slice(1)}`
+}
+
 function fieldIdentifier(value: string): string {
   if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(value) && !javaKeywords.has(value)) return value
 
@@ -84,7 +88,8 @@ function numberType(value: number): 'Integer' | 'Long' | 'BigDecimal' {
   return 'Long'
 }
 
-function inferType(values: readonly unknown[], suggestedName: string, usedModelNames: Set<string>): JavaType {
+function inferType(values: readonly unknown[], suggestedName: string, usedModelNames: Set<string>, depth = 0): JavaType {
+  if (depth > 64) throw new Error('JSON nesting is too deep to generate a Java model (maximum 64 levels).')
   const present = values.filter((value) => value !== null)
   if (present.length === 0) return { kind: 'scalar', name: 'Object' }
 
@@ -106,25 +111,39 @@ function inferType(values: readonly unknown[], suggestedName: string, usedModelN
     const items = present.flatMap((value) => Array.isArray(value) ? value : [])
     return {
       kind: 'list',
-      item: inferType(items, `${suggestedName}Item`, usedModelNames),
+      item: inferType(items, `${suggestedName}Item`, usedModelNames, depth + 1),
     }
   }
   if (kind !== 'object') return { kind: 'scalar', name: 'Object' }
 
   const modelName = uniqueName(suggestedName, usedModelNames)
-  const objects = present.filter(isJsonObject)
-  const keys = [...new Set(objects.flatMap((value) => Object.keys(value)))].sort()
+  const fieldValues = new Map<string, unknown[]>()
+  for (const value of present) {
+    if (!isJsonObject(value)) continue
+    for (const [key, fieldValue] of Object.entries(value)) {
+      const valuesForKey = fieldValues.get(key) ?? []
+      valuesForKey.push(fieldValue)
+      fieldValues.set(key, valuesForKey)
+    }
+  }
+  const keys = [...fieldValues.keys()].sort()
   const usedFields = new Set<string>()
+  const usedAccessors = new Set<string>()
   const nestedNames = new Set([modelName])
   const fields = keys.map((jsonName) => {
-    const javaName = uniqueName(fieldIdentifier(jsonName), usedFields)
-    const fieldValues = objects
-      .filter((object) => Object.hasOwn(object, jsonName))
-      .map((object) => object[jsonName])
+    const baseName = fieldIdentifier(jsonName)
+    let javaName = baseName
+    let suffix = 2
+    while (usedFields.has(javaName) || usedAccessors.has(accessorSuffix(javaName))) {
+      javaName = `${baseName}${suffix}`
+      suffix += 1
+    }
+    usedFields.add(javaName)
+    usedAccessors.add(accessorSuffix(javaName))
     return {
       jsonName,
       javaName,
-      type: inferType(fieldValues, classIdentifier(javaName), nestedNames),
+      type: inferType(fieldValues.get(jsonName) ?? [], classIdentifier(javaName), nestedNames, depth + 1),
     }
   })
 
@@ -202,6 +221,7 @@ function renderModel(
     }
   } else {
     lines.push(`${indent}public ${isRoot ? '' : 'static '}class ${model.name} {`)
+    const accessorSuffixes = new Set<string>()
     for (const field of model.fields) {
       if (field.javaName !== field.jsonName) {
         lines.push(`${innerIndent}@JsonProperty(${javaString(field.jsonName)})`)
@@ -211,7 +231,14 @@ function renderModel(
     lines.push('')
     lines.push(`${innerIndent}public ${model.name}() {}`)
     for (const field of model.fields) {
-      const suffix = `${field.javaName[0].toUpperCase()}${field.javaName.slice(1)}`
+      const baseSuffix = accessorSuffix(field.javaName)
+      let suffix = baseSuffix
+      let suffixNumber = 2
+      while (accessorSuffixes.has(suffix)) {
+        suffix = `${baseSuffix}${suffixNumber}`
+        suffixNumber += 1
+      }
+      accessorSuffixes.add(suffix)
       const typeName = javaTypeName(field.type)
       lines.push('')
       lines.push(`${innerIndent}public ${typeName} get${suffix}() {`)

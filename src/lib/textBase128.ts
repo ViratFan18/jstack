@@ -1,8 +1,10 @@
+import { decodeWellFormedUtf8, encodeWellFormedUtf8 } from './utf8'
+
 const BRAILLE_BASE = 0x2801
 const BRAILLE_MAX = 0x2880
 
 export function encodeTextBase128(value: string): string {
-  const bytes = new TextEncoder().encode(value)
+  const bytes = encodeWellFormedUtf8(value)
   const output: string[] = []
   let buffer = 0
   let bits = 0
@@ -46,13 +48,7 @@ export function decodeBase128Text(value: string): string {
   if (symbols.length > 0 && bytes.length === 0) throw new Error('The Base128 input is too short to contain UTF-8 data.')
   if (bits > 0 && buffer !== 0) throw new Error('The Base128 padding is invalid.')
 
-  let decoded: string
-  try {
-    decoded = new TextDecoder('utf-8', { fatal: true }).decode(Uint8Array.from(bytes))
-  } catch (error) {
-    if (error instanceof TypeError) throw new Error('Decoded Base128 data is not valid UTF-8 text.')
-    throw error
-  }
+  const decoded = decodeWellFormedUtf8(Uint8Array.from(bytes))
 
   if (encodeTextBase128(decoded) !== input) throw new Error('The Base128 input is not canonically encoded.')
   return decoded

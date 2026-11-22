@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Learn why decoding a JWT does not verify it, and how Java services should validate signatures, issuer, audience, time claims, and authorization.">
+  <meta name="theme-color" content="#0B1015">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/policy.css">
+  <script src="/theme.js" defer></script>
+  <title>JWT Decoding vs Signature Verification · JStack</title>
+</head>
+<body>
+  <header><a class="brand" href="/" aria-label="JStack home"><img src="/jstack-logo.svg" alt="JStack"></a><nav aria-label="Main navigation"><a href="/">Tools</a><a href="/learning">Learning</a><a href="/blog">Blog</a><a href="/guide">Guide</a><a href="/about">About</a></nav></header>
+  <main>
+    <div class="eyebrow">TOKENS · PRACTICAL GUIDE</div>
+    <h1>JWT decoding is not signature verification</h1>
+    <p class="lead">A compact token can be readable and still be forged, expired, intended for a different service, or not authorized for an operation. Treat inspection and trust as separate steps.</p>
+    <figure class="article-figure">
+      <img src="/images/jwt-verification-flow.svg" alt="A JWT moves through signature verification, claims validation, and application authorization." width="960" height="360">
+      <figcaption>Verification establishes only the checks configured for the token. Authorization remains an application decision.</figcaption>
+    </figure>
+    <article>
+      <h2>1. A signed JWT is not encrypted</h2>
+      <p>A compact JSON Web Signature (JWS) commonly contains three Base64URL-encoded parts: a JOSE header, claims payload, and signature. Base64URL is an encoding, not secrecy. Anyone holding the token can usually inspect its first two parts.</p>
+      <p>For a harmless local inspection, Java can decode the header and payload without asserting that the token is genuine:</p>
+      <pre><code>import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
+String[] parts = compactToken.split("\\.", -1);
+if (parts.length != 3) {
+    throw new IllegalArgumentException("Expected a compact JWS");
+}
+String header = new String(
+    Base64.getUrlDecoder().decode(parts[0]), StandardCharsets.UTF_8);
+String claims = new String(
+    Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);</code></pre>
+      <p>This code does not verify the signature, expiry, issuer, audience, or permissions. Do not make an access-control decision from decoded claims.</p>
+    </article>
+    <article>
+      <h2>2. Validate with application-owned expectations</h2>
+      <p>A robust resource server chooses trusted keys and an allowed algorithm independently of untrusted token input. It then verifies the signature and checks required claims in the context of the service. In Spring Security, begin with the resource-server integration rather than writing a bearer-token parser:</p>
+      <pre><code>http
+    .authorizeHttpRequests(authorize -> authorize
+        .requestMatchers("/health").permitAll()
+        .anyRequest().authenticated())
+    .oauth2ResourceServer(resourceServer ->
+        resourceServer.jwt(Customizer.withDefaults()));</code></pre>
+      <p>Configure the trusted issuer for the environment, and add audience validation when the service requires a particular audience. Confirm expiry and not-before handling, key rotation behavior, and the algorithm policy against the exact Spring Security version and identity provider in use. A valid signature alone does not grant access.</p>
+      <ol>
+        <li>Reject malformed tokens and unexpected compact serialization.</li>
+        <li>Use trusted issuer metadata or a securely provisioned key; do not fetch arbitrary key URLs from a token.</li>
+        <li>Allow only algorithms and key types configured for the application.</li>
+        <li>Validate the expected issuer, audience, expiry, and any required application claims.</li>
+        <li>Apply endpoint authorization after authentication succeeds.</li>
+      </ol>
+    </article>
+    <article>
+      <h2>3. Use a decoder only for inspection</h2>
+      <p>The <a href="/jwt-decoder">JStack JWT decoder</a> labels its output as decoded and unverified. It runs locally in the browser, but that does not make the decoded values trustworthy. The separate <a href="/jwt-verifier">JWT signature verifier</a> can check a signature with a supplied key; its result still does not replace issuer, audience, authorization, or deployment-specific validation.</p>
+      <p>Use synthetic examples in tools and screenshots. Do not share production tokens, signing keys, or decrypted claims in logs, issue reports, analytics, or URLs. A bearer token can grant access to whoever obtains it.</p>
+    </article>
+    <article>
+      <h2>Related reading and tools</h2>
+      <p>Compare signed and encrypted token workflows in the <a href="/learning">Learning Center</a>, or read the <a href="/guide">JWT and Java backend guide</a>. Continue with the <a href="/jwt-key-generator">key generator</a> for test-only key material and the <a href="/blog/json-to-java-records">JSON modeling article</a>.</p>
+    </article>
+  </main>
+  <footer><span>JStack · developer tools</span><span><a href="/blog">All articles</a><a href="/learning">Learning</a><a href="/privacy">Privacy</a></span></footer>
+</body>
+</html>

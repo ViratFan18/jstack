@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" role="img" aria-labelledby="title description">
+  <title id="title">Text encoding and matching decoder</title>
+  <desc id="description">The same UTF-8 bytes can be represented by different encoding formats, and each requires a matching decoder.</desc>
+  <rect width="960" height="360" rx="24" fill="#111820"/>
+  <text x="48" y="72" fill="#A8B8B0" font-family="Arial,sans-serif" font-size="16" letter-spacing="2">REPRESENTATION IS NOT PROTECTION</text>
+  <g font-family="Arial,sans-serif">
+    <rect x="54" y="132" width="182" height="112" rx="14" fill="#172C23" stroke="#39C98A" stroke-width="2"/>
+    <text x="145" y="174" text-anchor="middle" fill="#39C98A" font-size="18" font-weight="700">UTF-8 bytes</text>
+    <text x="145" y="208" text-anchor="middle" fill="#F1F5F3" font-family="monospace" font-size="15">68 65 6C 6C 6F</text>
+    <path d="M250 188h54m-13-12 13 12-13 12" fill="none" stroke="#39C98A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="318" y="120" width="258" height="136" rx="14" fill="#151E26" stroke="#329BFA" stroke-width="2"/>
+    <text x="447" y="158" text-anchor="middle" fill="#329BFA" font-size="18" font-weight="700">Choose an encoding</text>
+    <text x="447" y="192" text-anchor="middle" fill="#F1F5F3" font-size="15">Base64 · Base64URL</text>
+    <text x="447" y="222" text-anchor="middle" fill="#F1F5F3" font-size="15">JStack Base128</text>
+    <path d="M590 188h54m-13-12 13 12-13 12" fill="none" stroke="#39C98A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="658" y="132" width="246" height="112" rx="14" fill="#172C23" stroke="#39C98A" stroke-width="2"/>
+    <text x="781" y="174" text-anchor="middle" fill="#39C98A" font-size="18" font-weight="700">Matching decoder</text>
+    <text x="781" y="208" text-anchor="middle" fill="#F1F5F3" font-size="15">Same rules → same bytes</text>
+  </g>
+  <text x="480" y="316" text-anchor="middle" fill="#A8B8B0" font-family="Arial,sans-serif" font-size="15">Encoding does not encrypt, authenticate, or hide the original data.</text>
+</svg>

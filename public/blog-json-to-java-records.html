@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Turn a representative JSON response into Java records or POJOs, with practical guidance for nulls, arrays, naming, and contract validation.">
+  <meta name="theme-color" content="#0B1015">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/policy.css">
+  <script src="/theme.js" defer></script>
+  <title>From JSON Examples to Java Records · JStack</title>
+</head>
+<body>
+  <header><a class="brand" href="/" aria-label="JStack home"><img src="/jstack-logo.svg" alt="JStack"></a><nav aria-label="Main navigation"><a href="/">Tools</a><a href="/learning">Learning</a><a href="/blog">Blog</a><a href="/guide">Guide</a><a href="/about">About</a></nav></header>
+  <main>
+    <div class="eyebrow">JAVA · PRACTICAL GUIDE</div>
+    <h1>From a JSON example to a Java model</h1>
+    <p class="lead">A generator can save repetitive typing, but a sample response is evidence about one example, not a complete API contract. Use inference as a draft and validate the model against the real requirements.</p>
+    <figure class="article-figure">
+      <img src="/images/json-to-java-flow.svg" alt="A JSON fixture is parsed, converted into candidate Java types, then reviewed and tested against a contract." width="960" height="360">
+      <figcaption>Generation is an inference step. Review and test the result before using it as an application model.</figcaption>
+    </figure>
+    <article>
+      <h2>Start with representative data</h2>
+      <p>Consider a response that has nested data and a collection:</p>
+      <pre><code>{
+  "id": 42,
+  "displayName": "Ada Lovelace",
+  "active": true,
+  "roles": ["admin", "author"],
+  "address": {
+    "city": "London",
+    "postalCode": "N1"
+  }
+}</code></pre>
+      <p>After checking its syntax with a <a href="/json-validator">JSON validator</a>, a plausible Java 16+ record model is:</p>
+      <pre><code>import java.util.List;
+
+public record User(
+    Long id,
+    String displayName,
+    Boolean active,
+    List&lt;String&gt; roles,
+    Address address
+) {
+    public record Address(String city, String postalCode) {}
+}</code></pre>
+      <p>Compile generated output in the target Java version. Add the package, imports, serialization configuration, validation, and constructors that your application actually needs.</p>
+    </article>
+    <article>
+      <h2>Inference has limits</h2>
+      <ul>
+        <li><strong>Optional fields:</strong> a single fixture cannot show whether a field may be omitted in another response.</li>
+        <li><strong>Null values:</strong> a null-only value does not reveal the intended Java type. A generator may use <code>Object</code> until you provide a better example.</li>
+        <li><strong>Arrays:</strong> one array sample may not include every variant. Mixed values need an explicit domain model or a deliberate broad type.</li>
+        <li><strong>Numbers:</strong> a sample cannot express the allowed range, precision, or whether a value is an identifier rather than a quantity.</li>
+        <li><strong>Names:</strong> Java identifiers may need normalization. If the generated field name differs from the JSON key, review the serialization annotation and required dependency.</li>
+      </ul>
+      <p>For stable APIs, treat an OpenAPI document, JSON Schema, or an explicitly maintained contract as the source of truth. A generated model is not schema validation and does not guarantee future compatibility.</p>
+    </article>
+    <article>
+      <h2>A review checklist</h2>
+      <ol>
+        <li>Use fixtures for typical, minimal, nullable, and alternate response variants.</li>
+        <li>Check primitive versus wrapper types and the project's nullability conventions.</li>
+        <li>Verify nested collection types and key-to-field mappings.</li>
+        <li>Compile with the target Java release and serialization library.</li>
+        <li>Add tests that deserialize representative fixtures and reject invalid cases.</li>
+      </ol>
+      <p>The <a href="/json-to-java">JStack generator</a> runs in the browser and keeps the sample input in the page. Try a harmless fixture, then inspect every inferred type. Related: <a href="/blog/base64-vs-base128">text encoding distinctions</a> and the <a href="/learning">Learning Center</a>.</p>
+    </article>
+  </main>
+  <footer><span>JStack · developer tools</span><span><a href="/blog">All articles</a><a href="/learning">Learning</a><a href="/privacy">Privacy</a></span></footer>
+</body>
+</html>

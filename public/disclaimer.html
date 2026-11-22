@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Understand JStack's browser-processing trust boundary and limits for JWT verification, JSON validation, encoding, and generated Java.">
+  <meta name="theme-color" content="#0B1015">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/policy.css">
+  <script src="/theme.js" defer></script>
+  <title>Developer Tool Disclaimer · JStack</title>
+</head>
+<body>
+  <header><a class="brand" href="/" aria-label="JStack home"><img src="/jstack-logo.svg" alt="JStack"></a><nav aria-label="Main navigation"><a href="/">Tools</a><a href="/guide.html">Guide</a><a href="/privacy.html">Privacy</a></nav></header>
+  <main>
+    <h1>Developer Tool Disclaimer</h1>
+    <p class="lead">JStack tools are practical development helpers. Check every result in the context of your own application and requirements.</p>
+    <article><h2>Browser processing and trust boundary</h2><p>Supported JWT, JWE, JSON, Java-model, Base64, and JStack Base128 operations run in the current page; tool inputs are not sent to a JStack application backend. Browser extensions, the device, network, and static-site host remain part of the trust boundary. Do not enter production secrets unless you have independently reviewed the code and deployment.</p></article>
+    <article><h2>Cryptography limitations</h2><p>Decoding reveals encoded token values but does not establish trust. Verification checks the selected signature and configured registered claims, but is not authorization and does not guarantee a token is appropriate for a specific request. JWS does not hide its payload. JWE requires the matching decryption key and does not replace authorization or key management.</p></article>
+    <article><h2>Data and encoding limitations</h2><p>JSON validation checks syntax only, not a schema or business rules. Base64 is reversible encoding, not encryption. Base64 text conversion is not arbitrary binary-file decoding. JStack Base128 is a custom U+2801–U+2880 mapping, not a universal standard.</p></article>
+    <article><h2>Generated code and learning examples</h2><p>Generated Java source and tutorial snippets are illustrative starting points. Review types, nullability, validation, serialization, key formats, dependencies, and compatibility; compile and test against your own project before use.</p></article>
+    <article><h2>Independent review</h2><p>Do not rely on JStack alone for production security decisions, compliance determinations, or legal advice. Verify sensitive operations with maintained libraries, trusted keys, and your organization's review process.</p></article>
+  </main>
+  <footer><span>JStack · developer tools</span><span><a href="/terms.html">Terms</a><a href="/privacy.html">Privacy</a></span></footer>
+</body>
+</html>

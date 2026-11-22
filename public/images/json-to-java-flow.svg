@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" role="img" aria-labelledby="title description">
+  <title id="title">JSON example to reviewed Java model</title>
+  <desc id="description">A representative JSON fixture is parsed and converted into candidate Java types, then reviewed and tested against an API contract.</desc>
+  <rect width="960" height="360" rx="24" fill="#111820"/>
+  <text x="48" y="72" fill="#A8B8B0" font-family="Arial,sans-serif" font-size="16" letter-spacing="2">FROM EXAMPLE TO MAINTAINABLE CODE</text>
+  <g font-family="Arial,sans-serif">
+    <rect x="48" y="112" width="236" height="156" rx="14" fill="#151E26" stroke="#315744" stroke-width="2"/>
+    <text x="70" y="148" fill="#39C98A" font-size="18" font-weight="700">1 · JSON fixture</text>
+    <text x="70" y="184" fill="#F1F5F3" font-family="monospace" font-size="14">{ "id": 42,</text>
+    <text x="70" y="210" fill="#F1F5F3" font-family="monospace" font-size="14">  "roles": [...] }</text>
+    <text x="70" y="244" fill="#A8B8B0" font-size="13">One observed response</text>
+    <path d="M298 190h52m-13-12 13 12-13 12" fill="none" stroke="#39C98A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="364" y="112" width="236" height="156" rx="14" fill="#151E26" stroke="#329BFA" stroke-width="2"/>
+    <text x="386" y="148" fill="#329BFA" font-size="18" font-weight="700">2 · Infer types</text>
+    <text x="386" y="190" fill="#F1F5F3" font-size="15">Nested objects</text>
+    <text x="386" y="216" fill="#F1F5F3" font-size="15">Arrays · nulls · names</text>
+    <text x="386" y="244" fill="#A8B8B0" font-size="13">Inference has uncertainty</text>
+    <path d="M614 190h52m-13-12 13 12-13 12" fill="none" stroke="#39C98A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="680" y="112" width="232" height="156" rx="14" fill="#172C23" stroke="#39C98A" stroke-width="2"/>
+    <text x="702" y="148" fill="#39C98A" font-size="18" font-weight="700">3 · Review + test</text>
+    <text x="702" y="190" fill="#F1F5F3" font-size="15">Check contract</text>
+    <text x="702" y="216" fill="#F1F5F3" font-size="15">Compile + deserialize</text>
+    <text x="702" y="244" fill="#A8B8B0" font-size="13">Add edge-case fixtures</text>
+  </g>
+  <text x="480" y="316" text-anchor="middle" fill="#A8B8B0" font-family="Arial,sans-serif" font-size="15">Generated types are a draft, not a schema or compatibility guarantee.</text>
+</svg>

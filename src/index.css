@@ -1,79 +1,83 @@
 :root {
-  font-family: "IBM Plex Sans", "Geist", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-sans), "Segoe UI", ui-sans-serif, system-ui, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-optical-sizing: auto;
-  font-weight: 500;
-  color: #1F2B26;
-  background: #F7F9F7;
   font-size: 14px;
-  --page: #F7F9F7;
-  --surface: #FFFFFF;
-  --surface-alt: #F1F4F2;
-  --ink: #1F2B26;
-  --muted: #68756E;
-  --subtle: #68756E;
-  --line: #187A62;
-  --line-strong: #12664F;
-  --green: #187A62;
-  --green-dark: #187A62;
-  --green-soft: #E4F1EB;
-  --teal: #438D83;
-  --teal-soft: #E7F1EF;
-  --warning: #8A6415;
-  --warning-soft: #FBF2D8;
-  --error: #A9434D;
-  --error-soft: #F9E8E9;
-  --lime: #91a85d;
-  --lime-soft: #edf3d9;
-  --coral: #d28a62;
-  --coral-soft: #f8e6d8;
-  --blue: #6d8bb5;
-  --blue-soft: #e3ebf6;
-  --red: #b45b62;
-  --red-soft: #fae6e7;
-  --shadow: 0 1px 2px rgba(23, 40, 33, .04);
-  --mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  color-scheme: light;
 }
 
-:root[data-theme='dark'] {
-  color-scheme: dark;
-  color: #EDF3EF;
-  background: #131816;
-  --page: #131816;
-  --surface: #1C2420;
-  --surface-alt: #252F2A;
-  --ink: #EDF3EF;
-  --muted: #A7B4AD;
-  --subtle: #A7B4AD;
-  --line: #FFFFFF;
-  --line-strong: #FFFFFF;
-  --green: #65C5A3;
-  --green-dark: #65C5A3;
-  --green-soft: #263A32;
-  --teal: #72B8AE;
-  --teal-soft: #263733;
-  --warning: #E0BE69;
-  --warning-soft: #3D3420;
-  --error: #E28D94;
-  --error-soft: #40282C;
-  --lime: #c1cf93;
-  --lime-soft: #343e29;
-  --coral: #dfa58a;
-  --coral-soft: #44362f;
-  --blue: #91add3;
-  --blue-soft: #293746;
-  --red: #e49aa0;
-  --red-soft: #432e32;
-  --shadow: 0 1px 2px rgba(0, 0, 0, .18);
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-* { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; min-height: 100vh; overflow-x: hidden; background: var(--page); }
-button, input, textarea, select { font: inherit; }
-button { color: inherit; }
-button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
-::selection { background: var(--green); color: #071712; }
+html {
+  min-width: 320px;
+  background: var(--page);
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font-sans), "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+::selection {
+  background: var(--green);
+  color: #071712;
+}
+
+.app-crash {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  max-width: 720px;
+  margin: 12vh auto;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.app-crash h1,
+.app-crash p {
+  margin: 0;
+}
+
+.app-crash button {
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid var(--green);
+  border-radius: 8px;
+  background: var(--green);
+  color: #fff;
+  cursor: pointer;
+}
+
+:root[data-theme='dark'] .app-crash button {
+  color: #082015;
+}
+
+.app-crash a {
+  color: var(--green-dark);
+}

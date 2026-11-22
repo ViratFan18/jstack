@@ -3,21 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="About JStack's browser-based JWT, JSON, Java model, Base64, and custom Base128 developer tools.">
+  <meta name="description" content="Learn about JStack's browser-based JWT, JSON, Java model, Base64, and custom Base128 tools, their local processing, and their limitations.">
   <script src="/theme.js" defer></script>
   <link rel="stylesheet" href="/policy.css">
-  <title>About JStack</title>
+  <title>About JStack – Java and Backend Developer Tools</title>
 </head>
 <body>
-  <header><a class="brand" href="/">JStack</a><nav aria-label="Main navigation"><a href="/">Tools</a><a href="/guide.html">Guide</a><a href="/about.html">About</a><a href="/contact.html">Contact</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><button class="theme-toggle" type="button" data-theme-toggle><span class="theme-toggle-icon" aria-hidden="true">◐</span><span class="theme-toggle-label">Light theme</span></button></nav></header>
+  <header><a class="brand" href="/" aria-label="JStack home"><img src="/jstack-logo.svg" alt="JStack" /></a><nav aria-label="Main navigation"><a href="/">Tools</a><a href="/guide.html">Guide</a><a href="/about.html">About</a><a href="/contact.html">Contact</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><button class="theme-toggle" type="button" data-theme-toggle><span class="theme-toggle-icon" aria-hidden="true">◐</span><span class="theme-toggle-label">Light theme</span></button></nav></header>
   <main>
-    <div class="eyebrow">JSTACK / ABOUT</div>
     <h1>Java developer tools for JWT, JSON and Java models.</h1>
     <p class="lead">JStack brings common token, JSON, Java-model, and text-encoding tasks together in one clear browser-based workspace.</p>
     <article><h2>JWT and JWE tools</h2><p><a href="/jwt-decoder">Decode JWTs</a>, <a href="/jwt-encoder">sign JWS tokens</a>, <a href="/jwt-verifier">verify signatures</a>, and work with supported <a href="/jwe-encryptor">JWE encryption</a> formats. Decoding only reveals encoded content; it does not verify a token or authorize access.</p></article>
     <article><h2>JSON and Java tools</h2><p><a href="/json-formatter">Format JSON</a>, <a href="/json-validator">check its syntax</a>, or <a href="/json-to-java">generate Java records and POJOs</a> from a sample object. JSON syntax checks do not validate schemas, and inferred Java types are not a substitute for an API contract.</p></article>
     <article><h2>Text encoding tools</h2><p>Use the <a href="/base64-converter">Base64 text converter</a> for standard Base64. Base64 is an encoding format, not encryption. JStack Base128 is a separate custom format compatible only with tools using the same Braille-symbol mapping.</p></article>
-    <article><h2>Privacy and safety</h2><p>Tool inputs are processed in the page and are not sent to a JStack application backend or saved in local storage. Your theme preference is saved locally so it carries between pages. The hosting provider still receives ordinary web requests; see the <a href="/privacy.html">Privacy Policy</a>.</p></article>
+    <article><h2>Privacy and safety</h2><p>Tool inputs are processed in the page and are not sent to a JStack application backend or saved in local storage. Theme, recent-tool, and favorite-tool preferences may be stored locally; the tools remain usable when browser storage is blocked. Indexable public pages load the Google AdSense library; see the <a href="/privacy">Privacy Policy</a> for the current disclosure and the operator's consent responsibilities.</p></article>
+    <article><h2>Built for self-directed workflows</h2><p>There is no required account. Open a tool, use a harmless example, and review the limits shown beside the operation. The command palette searches tools and site pages with <kbd>Ctrl</kbd>+<kbd>K</kbd>. Optional favorites and recent tools are browser preferences, not a profile.</p><p>For detailed examples, visit the <a href="/learning">Learning Center</a> and the <a href="/blog">developer articles</a>; project capabilities are summarized in the undated <a href="/changelog">Changelog</a>.</p></article>
     <p class="notice">The tools are for convenience and education. Review security-sensitive results independently before production use.</p>
   </main>
   <footer><span>JStack · developer tools</span><span><a href="/contact.html">Contact</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></span></footer>

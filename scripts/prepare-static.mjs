@@ -25,7 +25,7 @@ if (configuredSiteUrl) {
 }
 
 if (!configuredSiteUrl && process.env.CF_PAGES === '1') {
-  throw new Error('Set the VITE_SITE_URL Cloudflare Pages build variable to your production HTTPS origin.')
+  console.warn(`VITE_SITE_URL is not set; generating canonical URLs for ${defaultSiteUrl}. Set it if the production site uses a different origin.`)
 }
 
 const toolPages = [
@@ -173,13 +173,58 @@ const toolPages = [
       ['Standard Base64 and Base64URL differ', 'This converter handles standard Base64 text. Base64URL uses a different alphabet and conventions and is not the JWT-specific decoder.'],
     ],
   },
+  {
+    slug: 'base128-converter',
+    name: 'JStack Base128 converter',
+    title: 'JStack Base128 Converter – Custom Printable UTF-8 Encoding',
+    description: 'Encode and decode UTF-8 text with JStack’s custom printable Base128 format in your browser. It is not a universal Base128 standard.',
+    heading: 'JStack Base128 encoder and decoder',
+    action: 'Convert text with JStack Base128',
+    sections: [
+      ['Encode text with the JStack mapping', 'The JStack Base128 converter packs UTF-8 bytes into seven-bit groups and maps each group to a Braille symbol.'],
+      ['Base128 is not a universal standard', 'This format uses JStack’s custom U+2801–U+2880 mapping. Use the matching JStack decoder for round-trips; another Base128 implementation may use a different mapping.'],
+      ['Process text locally', 'Encoding and decoding run in the current browser. JStack does not upload input or save your text.'],
+    ],
+  },
+]
+
+const articlePages = [
+  {
+    file: 'blog-jwt-signature-verification.html',
+    path: '/blog/jwt-signature-verification',
+    image: '/images/jwt-verification-flow.svg',
+  },
+  {
+    file: 'blog-json-to-java-records.html',
+    path: '/blog/json-to-java-records',
+    image: '/images/json-to-java-flow.svg',
+  },
+  {
+    file: 'blog-base64-vs-base128.html',
+    path: '/blog/base64-vs-base128',
+    image: '/images/text-encoding-comparison.svg',
+  },
 ]
 
 const escapeHtml = (value) => value.replace(/[&<>"']/g, (character) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
 })[character])
 
-const toolLinks = toolPages.map(({ slug, name }) => `      <a href="/${slug}">${escapeHtml(name)}</a>`).join('\n')
+const relatedToolSlugs = {
+  'jwt-decoder': ['jwt-verifier', 'jwt-encoder', 'jwt-key-generator'],
+  'jwt-encoder': ['jwt-verifier', 'jwt-key-generator', 'jwe-encryptor'],
+  'jwt-verifier': ['jwt-decoder', 'jwt-encoder', 'jwt-key-generator'],
+  'jwe-encryptor': ['jwe-decryptor', 'jwt-key-generator', 'jwt-verifier'],
+  'jwe-decryptor': ['jwe-encryptor', 'jwt-key-generator', 'jwt-verifier'],
+  'jwt-key-generator': ['jwt-encoder', 'jwt-verifier', 'jwe-encryptor'],
+  'json-formatter': ['json-minifier', 'json-validator', 'json-to-java'],
+  'json-minifier': ['json-formatter', 'json-validator', 'json-to-java'],
+  'json-validator': ['json-formatter', 'json-to-java', 'json-minifier'],
+  'json-to-java': ['json-validator', 'json-formatter'],
+  'base64-converter': ['base128-converter', 'json-formatter'],
+  'base128-converter': ['base64-converter', 'json-formatter'],
+}
+const toolsBySlug = new Map(toolPages.map((tool) => [tool.slug, tool]))
 for (const tool of toolPages) {
   const canonicalUrl = `${siteUrl}/${tool.slug}`
   const structuredData = JSON.stringify([
@@ -203,13 +248,18 @@ for (const tool of toolPages) {
     },
   ]).replace(/</g, '\\u003c')
   const sections = tool.sections.map(([heading, content]) => `    <article><h2>${escapeHtml(heading)}</h2><p>${escapeHtml(content)}</p></article>`).join('\n')
+  const relatedLinks = relatedToolSlugs[tool.slug]
+    .map((slug) => toolsBySlug.get(slug))
+    .filter(Boolean)
+    .map(({ slug, name }) => `      <a href="/${slug}">${escapeHtml(name)}</a>`)
+    .join('\n')
   const html = `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="${escapeHtml(tool.description)}">
-  <meta name="theme-color" content="#F7F9F7">
+  <meta name="theme-color" content="#090B10">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/policy.css">
   <script src="/theme.js" defer></script>
@@ -217,16 +267,16 @@ for (const tool of toolPages) {
   <script type="application/ld+json">${structuredData}</script>
 </head>
 <body>
-  <header><a class="brand" href="/">JStack</a><nav aria-label="Main navigation"><a href="/">Tools</a><a href="/guide">Guide</a><a href="/about">About</a><button class="theme-toggle" type="button" data-theme-toggle><span class="theme-toggle-icon" aria-hidden="true">◐</span><span class="theme-toggle-label">Light theme</span></button></nav></header>
+  <header><a class="brand" href="/" aria-label="JStack home"><img src="/jstack-logo.svg" alt="JStack" /></a><nav aria-label="Main navigation"><a href="/">Tools</a><a href="/learning">Learning</a><a href="/blog">Blog</a><a href="/guide">Guide</a><a href="/about">About</a><button class="theme-toggle" type="button" data-theme-toggle><span class="theme-toggle-icon" aria-hidden="true">◐</span><span class="theme-toggle-label">Light theme</span></button></nav></header>
   <main>
-    <div class="eyebrow">JSTACK / DEVELOPER TOOLS</div>
     <h1>${escapeHtml(tool.heading)}</h1>
     <p class="lead">${escapeHtml(tool.description)}</p>
-    <p><a class="notice" href="/?tool=${tool.slug}">${escapeHtml(tool.action)} in the JStack browser tool</a></p>
+    <p><a class="notice" href="/app/${tool.slug}">${escapeHtml(tool.action)} in the JStack browser tool</a></p>
 ${sections}
     <article><h2>Related JStack tools</h2><nav class="tool-links" aria-label="Related developer tools">
-${toolLinks}
+${relatedLinks}
     </nav></article>
+    <article><h2>Continue learning</h2><p>Explore practical examples in the <a href="/learning">Java and backend Learning Center</a>, read the <a href="/blog">developer articles</a>, or open the <a href="/guide">JWT and Java backend security guide</a>.</p></article>
     <p class="notice">The tool runs in your browser. Review security-sensitive results independently and do not enter production secrets into a website you have not reviewed.</p>
   </main>
   <footer><span>JStack · developer tools</span><span><a href="/">Tools</a><a href="/guide">Guide</a><a href="/about">About</a><a href="/privacy">Privacy</a></span></footer>
@@ -259,29 +309,54 @@ const getMetaContent = (html, attribute, key) => {
 
 const files = await readdir(outputDirectory)
 const htmlFiles = files.filter((file) => file.endsWith('.html'))
-const sitemapHtmlFiles = []
+const sitemapPages = [
+  { file: 'index.html', path: '/' },
+  ...toolPages.map(({ slug }) => ({ file: `${slug}.html`, path: `/${slug}` })),
+  ...[
+    'about', 'contact', 'changelog', 'disclaimer', 'guide', 'learning', 'privacy', 'terms', 'blog',
+  ].map((slug) => ({ file: `${slug}.html`, path: `/${slug}` })),
+  ...articlePages,
+]
+const sitemapPageByFile = new Map(sitemapPages.map((page) => [page.file, page]))
+const sitemapFileSet = new Set(sitemapPageByFile.keys())
+const missingSitemapFiles = [...sitemapFileSet].filter((file) => !htmlFiles.includes(file))
+if (missingSitemapFiles.length) {
+  throw new Error(`Missing indexable pages required by the sitemap: ${missingSitemapFiles.join(', ')}`)
+}
+
+const adsenseLoader = '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6808102016344239" crossorigin="anonymous"></script>'
+
 for (const file of htmlFiles) {
   const filePath = join(outputDirectory, file)
   let html = await readFile(filePath, 'utf8')
   if (html.trim() === `google-site-verification: ${file}`) continue
-  sitemapHtmlFiles.push(file)
+  if (file === '404.html') continue
   html = html.replace(/\s*<link rel="canonical" href="[^"]*"\s*\/?>/gi, '')
-  const pagePath = file === 'index.html' ? '/' : `/${file.replace(/\.html$/i, '')}`
+  const pagePath = sitemapPageByFile.get(file)?.path ?? (file === 'index.html' ? '/' : `/${file.replace(/\.html$/i, '')}`)
   const canonical = `${siteUrl}${pagePath}`
+  const socialImage = sitemapPageByFile.get(file)?.image
+    ? `${siteUrl}${sitemapPageByFile.get(file).image}`
+    : `${siteUrl}/og-card.svg`
   const title = decodeHtml(html.match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? 'JStack developer tools')
   const description = decodeHtml(getMetaContent(html, 'name', 'description') || 'Browser-based developer tools from JStack.')
-  html = html.replace(/<head>/i, `<head>\n  <link rel="canonical" href="${canonical}" />`)
-  html = setMeta(html, 'property', 'og:type', 'website')
+  if (sitemapFileSet.has(file) && !html.includes('ca-pub-6808102016344239')) {
+    html = html.replace('</head>', `  ${adsenseLoader}\n</head>`)
+  }
+  if (file !== 'workspace.html') {
+    html = html.replace(/<head>/i, `<head>\n  <link rel="canonical" href="${canonical}" />`)
+  }
+  html = setMeta(html, 'name', 'robots', sitemapFileSet.has(file) ? 'index, follow' : 'noindex, follow')
+  html = setMeta(html, 'property', 'og:type', articlePages.some((article) => article.file === file) ? 'article' : 'website')
   html = setMeta(html, 'property', 'og:title', title)
   html = setMeta(html, 'property', 'og:description', description)
   html = setMeta(html, 'property', 'og:url', canonical)
-  html = setMeta(html, 'property', 'og:image', `${siteUrl}/og-card.svg`)
-  html = setMeta(html, 'property', 'og:image:alt', 'JStack Java and backend developer tools')
+  html = setMeta(html, 'property', 'og:image', socialImage)
+  html = setMeta(html, 'property', 'og:image:alt', sitemapPageByFile.get(file)?.image ? `Diagram for ${title}` : 'JStack Java and backend developer tools')
   html = setMeta(html, 'name', 'twitter:card', 'summary_large_image')
   html = setMeta(html, 'name', 'twitter:title', title)
   html = setMeta(html, 'name', 'twitter:description', description)
-  html = setMeta(html, 'name', 'twitter:image', `${siteUrl}/og-card.svg`)
-  html = setMeta(html, 'name', 'twitter:image:alt', 'JStack Java and backend developer tools')
+  html = setMeta(html, 'name', 'twitter:image', socialImage)
+  html = setMeta(html, 'name', 'twitter:image:alt', sitemapPageByFile.get(file)?.image ? `Diagram for ${title}` : 'JStack Java and backend developer tools')
   if (file === 'index.html') {
     const websiteData = {
       '@context': 'https://schema.org',
@@ -291,14 +366,40 @@ for (const file of htmlFiles) {
       description,
     }
     html = html.replace('</head>', `  <script type="application/ld+json">${JSON.stringify(websiteData).replace(/</g, '\\u003c')}</script>\n</head>`)
+  } else if (articlePages.some((article) => article.file === file)) {
+    const heading = decodeHtml(html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1]?.replace(/<[^>]*>/g, '').trim() ?? '')
+    const articleData = {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: heading,
+      description,
+      image: socialImage,
+      mainEntityOfPage: canonical,
+    }
+    html = html.replace('</head>', `  <script type="application/ld+json">${JSON.stringify(articleData).replace(/</g, '\\u003c')}</script>\n</head>`)
+  }
+  if (file !== 'index.html' && file !== 'workspace.html' && !/"@type"\s*:\s*"BreadcrumbList"/.test(html)) {
+    const heading = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1]
+    const breadcrumbName = decodeHtml(heading?.replace(/<[^>]*>/g, '').trim() ?? '')
+    if (!breadcrumbName) {
+      throw new Error(`Cannot create a breadcrumb for ${file}: the page needs a non-empty H1.`)
+    }
+    const breadcrumbData = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'JStack', item: siteUrl },
+        { '@type': 'ListItem', position: 2, name: breadcrumbName, item: canonical },
+      ],
+    }
+    html = html.replace('</head>', `  <script type="application/ld+json">${JSON.stringify(breadcrumbData).replace(/</g, '\\u003c')}</script>\n</head>`)
   }
   await writeFile(filePath, html.replace(/\r\n?/g, '\n'))
 }
 
 const robotsPath = join(outputDirectory, 'robots.txt')
 const sitemapPath = join(outputDirectory, 'sitemap.xml')
-const pages = sitemapHtmlFiles.map((file) => file === 'index.html' ? '/' : `/${file.replace(/\.html$/i, '')}`)
-const urls = pages.map((page) => `  <url><loc>${siteUrl}${page}</loc></url>`).join('\n')
+const urls = sitemapPages.map(({ path }) => `  <url><loc>${siteUrl}${path}</loc></url>`).join('\n')
 await writeFile(sitemapPath, `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`)
 await writeFile(robotsPath, `User-agent: *\nAllow: /\nSitemap: ${siteUrl}/sitemap.xml\n`)
-console.log(`Generated canonical URLs, metadata, ${pages.length} sitemap URLs, and robots.txt for ${siteUrl}`)
+console.log(`Generated canonical URLs, metadata, ${sitemapPages.length} sitemap URLs, and robots.txt for ${siteUrl}`)

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Understand what Base64 and Base64URL encode, how JStack Base128 differs, and why none of these text encodings provide encryption.">
+  <meta name="theme-color" content="#0B1015">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/policy.css">
+  <script src="/theme.js" defer></script>
+  <title>Base64, Base64URL, and JStack Base128 · JStack</title>
+</head>
+<body>
+  <header><a class="brand" href="/" aria-label="JStack home"><img src="/jstack-logo.svg" alt="JStack"></a><nav aria-label="Main navigation"><a href="/">Tools</a><a href="/learning">Learning</a><a href="/blog">Blog</a><a href="/guide">Guide</a><a href="/about">About</a></nav></header>
+  <main>
+    <div class="eyebrow">ENCODING · PRACTICAL GUIDE</div>
+    <h1>Base64, Base64URL, and JStack Base128</h1>
+    <p class="lead">Encoding changes how bytes are represented so they can be carried as text. It does not conceal data, prove who created it, or prevent tampering.</p>
+    <figure class="article-figure">
+      <img src="/images/text-encoding-comparison.svg" alt="Text bytes are encoded into a chosen representation and decoded with that same format." width="960" height="360">
+      <figcaption>An encoding round-trip needs a matching decoder and the same byte-to-text rules.</figcaption>
+    </figure>
+    <article>
+      <h2>Base64 represents bytes as printable characters</h2>
+      <p>For the UTF-8 bytes of the text <code>hello</code>, standard Base64 is <code>aGVsbG8=</code>. Decoding the value recovers those bytes, which can then be interpreted as UTF-8. Padding and the standard alphabet are part of this representation.</p>
+      <p>Base64 is not encryption: anyone can decode it. Do not use it to store or transport passwords, API keys, or private information as if they were protected. Use a cryptographic design with appropriate key management when confidentiality or integrity is required.</p>
+    </article>
+    <article>
+      <h2>Base64URL is a related but distinct alphabet</h2>
+      <p>JWT compact serialization uses Base64URL for its encoded header and payload. It substitutes URL-safe characters and commonly omits padding. A general standard-Base64 text decoder may not accept every Base64URL value as-is; a JWT decoder handles compact token structure and still does not verify the signature.</p>
+      <p>Keep the operation explicit: decode a JWT to inspect it, and use a verifier with expected policy and key to check its signature. Neither action alone authorizes a request.</p>
+    </article>
+    <article>
+      <h2>JStack Base128 is a custom format</h2>
+      <p>JStack Base128 packs UTF-8 bytes into seven-bit groups and maps those groups to Braille symbols from U+2801 through U+2880. This is a JStack-specific mapping, not a universal Base128 standard. Another implementation may use different rules and cannot be assumed to decode it.</p>
+      <p>The custom mapping is also not encryption or a security feature. Use the matching <a href="/base128-converter">JStack Base128 converter</a> for round-trips. For standard Base64 text, use the separate <a href="/base64-converter">Base64 converter</a>.</p>
+    </article>
+    <article>
+      <h2>Choose the format your receiver expects</h2>
+      <ul>
+        <li>Use standard Base64 only when the protocol or API specifies standard Base64.</li>
+        <li>Use Base64URL where the format requires URL-safe Base64, such as compact JWT parts.</li>
+        <li>Use JStack Base128 only when both sides implement this exact custom mapping.</li>
+        <li>Use encryption, not encoding, when the requirement is confidentiality; separately authenticate data when integrity is required.</li>
+      </ul>
+      <p>Try harmless Unicode text with the <a href="/base64-converter">Base64 tool</a> and the <a href="/base128-converter">JStack Base128 tool</a>. See the other <a href="/blog">developer articles</a> for JWT and JSON-to-Java examples.</p>
+    </article>
+  </main>
+  <footer><span>JStack · developer tools</span><span><a href="/blog">All articles</a><a href="/learning">Learning</a><a href="/privacy">Privacy</a></span></footer>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Hands-on Java and backend tutorials for JWT verification, JSON-to-Java modeling, and safe text encoding.">
+  <meta name="theme-color" content="#0B1015">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/policy.css">
+  <script src="/theme.js" defer></script>
+  <title>Developer Learning Center · JStack</title>
+</head>
+<body>
+  <header><a class="brand" href="/" aria-label="JStack home"><img src="/jstack-logo.svg" alt="JStack"></a><nav aria-label="Main navigation"><a href="/">Tools</a><a href="/learning">Learning</a><a href="/blog">Blog</a><a href="/changelog">Changelog</a><a href="/about">About</a></nav></header>
+  <main>
+    <h1>Learn by working through backend examples.</h1>
+    <p class="lead">Short, practical lessons connect the tools to real development tasks. Examples use synthetic values; never paste production credentials into a tutorial or a shared computer.</p>
+    <section class="article-grid" aria-label="More developer tutorials">
+      <article class="article-card">
+        <a class="article-image-link" href="/blog/jwt-signature-verification"><img src="/images/jwt-verification-flow.svg" alt="JWT signature and claims validation precede application authorization." width="960" height="360" loading="lazy"></a>
+        <div class="eyebrow">TOKENS</div>
+        <h2><a href="/blog/jwt-signature-verification">JWT decoding is not signature verification</a></h2>
+        <p>Separate readable claims from cryptographic checks and application access policy.</p>
+      </article>
+      <article class="article-card">
+        <a class="article-image-link" href="/blog/json-to-java-records"><img src="/images/json-to-java-flow.svg" alt="A JSON sample is converted into a Java model, then reviewed and tested." width="960" height="360" loading="lazy"></a>
+        <div class="eyebrow">JAVA</div>
+        <h2><a href="/blog/json-to-java-records">From JSON examples to Java records</a></h2>
+        <p>Handle nulls, arrays, names, and the limits of inferring a contract from one fixture.</p>
+      </article>
+      <article class="article-card">
+        <a class="article-image-link" href="/blog/base64-vs-base128"><img src="/images/text-encoding-comparison.svg" alt="Choose an encoding and decode with the corresponding format." width="960" height="360" loading="lazy"></a>
+        <div class="eyebrow">ENCODING</div>
+        <h2><a href="/blog/base64-vs-base128">Base64, Base64URL, and JStack Base128</a></h2>
+        <p>Learn why these representations differ and why none of them encrypts your data.</p>
+      </article>
+    </section>
+
+    <article>
+      <h2>1. Inspect a JWT, then verify it with application policy</h2>
+      <p>A compact signed JWT (JWS) has three dot-separated parts. The header and claims are Base64URL-encoded, not encrypted. Decoding can help diagnose a token, but the result is untrusted until a server verifies it with an expected algorithm and key.</p>
+      <p>For a quick, non-authenticating inspection in Java, the JDK URL-safe decoder can display the first two parts. This synthetic token has a placeholder signature and is included only to demonstrate decoding:</p>
+      <pre><code>import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
+public final class JwtPartsInspection {
+    public static void main(String[] args) {
+        String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZW1vIn0.cGxhY2Vob2xkZXI";
+        String[] parts = token.split("\\.", -1);
+        if (parts.length != 3) {
+            throw new IllegalArgumentException("Expected a compact JWS");
+        }
+
+        String header = new String(
+            Base64.getUrlDecoder().decode(parts[0]), StandardCharsets.UTF_8);
+        String claims = new String(
+            Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+        System.out.println(header);
+        System.out.println(claims);
+    }
+}</code></pre>
+      <p>Save as <code>JwtPartsInspection.java</code>, then run <code>javac JwtPartsInspection.java &amp;&amp; java JwtPartsInspection</code>. This code only decodes; it does not verify a signature or claims. In a Spring resource server, configure a trusted issuer and allowlisted algorithms through the framework rather than hand-parsing a bearer token:</p>
+      <pre><code>http
+    .authorizeHttpRequests(auth -> auth
+        .requestMatchers("/health").permitAll()
+        .anyRequest().authenticated())
+    .oauth2ResourceServer(resource -> resource.jwt());</code></pre>
+      <p>Then configure the issuer for your environment and add audience validation and application authorization when required. A verified signature is not an access-control decision. Use the <a href="/jwt-decoder">decoder</a> only for inspection and the <a href="/jwt-verifier">verifier</a> for a separate, local check with the expected key. For a longer validation checklist, see <a href="/blog/jwt-signature-verification">JWT decoding versus signature verification</a>.</p>
+    </article>
+
+    <article>
+      <h2>2. Turn a JSON example into a Java model you can review</h2>
+      <p>Start from a representative response rather than an empty or partial object. For example:</p>
+      <pre><code>{
+  "id": 42,
+  "displayName": "Ada Lovelace",
+  "active": true,
+  "roles": ["admin", "author"],
+  "address": { "city": "London", "postalCode": "N1" }
+}</code></pre>
+      <p>After checking its syntax, generate a record or POJO. Review every inferred type against the actual API contract: one sample cannot reveal optional fields, future enum values, numeric ranges, or all variants in a collection. A null-only or empty sample may reasonably infer <code>Object</code>; a renamed Java field may require Jackson's <code>@JsonProperty</code>.</p>
+      <p>For a record, a representative shape might be:</p>
+      <pre><code>import java.util.List;
+
+public record User(
+    Long id,
+    String displayName,
+    Boolean active,
+    List&lt;String&gt; roles,
+    Address address
+) {
+    public record Address(String city, String postalCode) {}
+}</code></pre>
+      <p>This is illustrative, not the output contract for every input: JStack's generator may use wrappers or annotations based on the sample and selected style. Add imports, package declarations, validation, serialization configuration, and tests for your project. Try the <a href="/json-validator">JSON syntax checker</a> and <a href="/json-to-java">model generator</a>.</p>
+    </article>
+
+    <article>
+      <h2>3. Decide between JWS and JWE before choosing a tool</h2>
+      <p>JWS signs content to detect unauthorized changes when verified with the right key. The payload is still readable. JWE encrypts content for confidentiality and requires the matching decryption key. Encryption does not decide whether a caller is authorized, and key distribution remains your responsibility.</p>
+      <ul>
+        <li>Use <a href="/jwt-encoder">JWS signing</a> when the consumer needs to verify integrity and issuer trust.</li>
+        <li>Use <a href="/jwe-encryptor">JWE encryption</a> only when the recipient needs confidentiality and the selected key arrangement is appropriate.</li>
+        <li>Keep private keys and shared secrets out of source control, logs, URLs, and support messages.</li>
+      </ul>
+      <p>In the workbench, direct <code>dir/A256GCM</code> uses a 32-byte shared key. RSA-OAEP-256 uses a public key to encrypt and its matching private key to decrypt. Treat every generated key and decrypted result as sensitive.</p>
+    </article>
+
+    <article>
+      <h2>4. Know what text encodings do</h2>
+      <p>Base64 represents bytes using printable characters; it provides no secrecy or integrity. Standard Base64 and Base64URL have different alphabets, and the text converter accepts standard Base64—not arbitrary binary files or JWT-specific Base64URL parts.</p>
+      <p>JStack Base128 is a custom mapping that packs UTF-8 bytes into seven-bit groups and maps them to Braille symbols U+2801–U+2880. It is not a universal standard. Use the matching JStack decoder for round-trips. Explore <a href="/base64-converter">Base64</a> or <a href="/base128-converter">JStack Base128</a> with harmless sample text.</p>
+    </article>
+
+    <article>
+      <h2>5. A small debugging checklist</h2>
+      <ol>
+        <li>Keep the original input and record the exact, non-secret error.</li>
+        <li>For JSON, check double-quoted keys and strings, commas, and trailing commas; syntax validity is not schema validity.</li>
+        <li>For a JWS, confirm the compact token has three parts; a compact JWE has five.</li>
+        <li>For verification, check the configured algorithm, matching key format, issuer, audience, and NumericDate units (seconds).</li>
+        <li>For generated Java, compile it in the target Java version and add project-specific imports and tests.</li>
+      </ol>
+      <p>Do not include bearer tokens, private keys, passwords, or other secrets in bug reports. The <a href="/guide">developer guide</a> covers these boundaries in more detail.</p>
+    </article>
+  </main>
+  <footer><span>JStack · developer tools</span><span><a href="/guide">Guide</a><a href="/changelog">Changelog</a><a href="/privacy">Privacy</a></span></footer>
+</body>
+</html>

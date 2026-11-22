@@ -40,6 +40,13 @@ describe('JSON to Java model generator', () => {
     expect(result).not.toContain('private boolean ')
   })
 
+  it('keeps POJO accessor names unique when property capitalization differs', () => {
+    const result = generateJavaModel('{"a":1,"A":2}', { style: 'pojo' })
+    expect(result).toContain('public Integer getA()')
+    expect(result).toContain('public Integer getA2()')
+    expect(result).toContain('@JsonProperty("a")')
+  })
+
   it('merges object arrays and uses Object for empty or heterogeneous arrays', () => {
     const result = generateJavaModel('{"items":[{"id":1},{"name":"Ada","id":null}],"empty":[],"mixed":[1,"two"]}')
 
@@ -60,5 +67,10 @@ describe('JSON to Java model generator', () => {
     expect(() => generateJavaModel('{bad json')).toThrow(/Invalid JSON/)
     expect(() => generateJavaModel('[{"id":1}]')).toThrow(/top-level JSON value must be an object/i)
     expect(() => generateJavaModel('null')).toThrow(/top-level JSON value must be an object/i)
+  })
+
+  it('rejects excessive nesting with a useful validation message', () => {
+    const deeplyNested = `${'{"nested":'.repeat(66)}{}${'}'.repeat(66)}`
+    expect(() => generateJavaModel(deeplyNested)).toThrow(/maximum 64 levels/i)
   })
 })

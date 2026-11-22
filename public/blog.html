@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Practical, original notes on JWT verification, JSON-to-Java modeling, and text encodings for Java and backend developers.">
+  <meta name="theme-color" content="#0B1015">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/policy.css">
+  <script src="/theme.js" defer></script>
+  <title>Java and Backend Developer Articles · JStack</title>
+</head>
+<body>
+  <header><a class="brand" href="/" aria-label="JStack home"><img src="/jstack-logo.svg" alt="JStack"></a><nav aria-label="Main navigation"><a href="/">Tools</a><a href="/learning">Learning</a><a href="/blog">Blog</a><a href="/guide">Guide</a><a href="/about">About</a></nav></header>
+  <main>
+    <h1>Practical notes for Java and backend work</h1>
+    <p class="lead">Focused tutorials explain what a tool does, what it cannot prove, and how to carry a safe example into application code. Examples use synthetic data and avoid claims about production systems.</p>
+    <section class="article-grid" aria-label="Developer articles">
+      <article class="article-card">
+        <a class="article-image-link" href="/blog/jwt-signature-verification">
+          <img src="/images/jwt-verification-flow.svg" alt="A JWT passes through signature, claims, and authorization checks." width="960" height="360" loading="lazy">
+        </a>
+        <div class="eyebrow">TOKENS</div>
+        <h2><a href="/blog/jwt-signature-verification">JWT decoding is not signature verification</a></h2>
+        <p>Separate token inspection from a trusted server-side validation flow, then add issuer, audience, and application authorization checks deliberately.</p>
+        <a href="/blog/jwt-signature-verification">Read the JWT verification article</a>
+      </article>
+      <article class="article-card">
+        <a class="article-image-link" href="/blog/json-to-java-records">
+          <img src="/images/json-to-java-flow.svg" alt="A representative JSON response becomes a Java model that must be reviewed and tested." width="960" height="360" loading="lazy">
+        </a>
+        <div class="eyebrow">JAVA</div>
+        <h2><a href="/blog/json-to-java-records">From a JSON example to a Java model</a></h2>
+        <p>Use a representative fixture to infer records or POJOs, understand null and array edge cases, and keep generated code tied to a real contract.</p>
+        <a href="/blog/json-to-java-records">Read the Java modeling article</a>
+      </article>
+      <article class="article-card">
+        <a class="article-image-link" href="/blog/base64-vs-base128">
+          <img src="/images/text-encoding-comparison.svg" alt="Text is encoded to a different representation and decoded by a matching format." width="960" height="360" loading="lazy">
+        </a>
+        <div class="eyebrow">ENCODING</div>
+        <h2><a href="/blog/base64-vs-base128">Base64, Base64URL, and JStack Base128</a></h2>
+        <p>Compare the standard text encoding, JWT's URL-safe alphabet, and JStack's separate custom Braille mapping without confusing any of them with encryption.</p>
+        <a href="/blog/base64-vs-base128">Read the encoding article</a>
+      </article>
+    </section>
+    <article>
+      <h2>Try the ideas with harmless examples</h2>
+      <p>Use the <a href="/jwt-decoder">JWT decoder</a> only to inspect a token; use the <a href="/jwt-verifier">signature verifier</a> with an expected algorithm and key when you need a local cryptographic check. Format sample data with the <a href="/json-formatter">JSON formatter</a>, then review a model in the <a href="/json-to-java">JSON-to-Java generator</a>. Never paste production credentials into a tutorial or public website.</p>
+      <p>For more step-by-step examples, see the <a href="/learning">Learning Center</a> and the <a href="/guide">developer guide</a>.</p>
+    </article>
+  </main>
+  <footer><span>JStack · developer tools</span><span><a href="/learning">Learning</a><a href="/guide">Guide</a><a href="/privacy">Privacy</a></span></footer>
+</body>
+</html>
