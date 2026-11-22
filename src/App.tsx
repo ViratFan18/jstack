@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import {
   ArrowLeftRight, ArrowUpDown, Binary, BookOpenText, Braces, Check, ChevronDown, CircleHelp,
   Code2, Copy, Download, FileKey2, KeyRound, LockKeyhole, Menu, Moon, Clock3, Star, Plus,
@@ -170,19 +170,48 @@ function getOperationErrorMessage(error: unknown): string {
   }
   return message || 'The operation could not be completed. Check the input and browser support, then retry.'
 }
-const homeTools = [
-  { slug: 'jwt-decoder', category: 'TOKENS', title: 'Decode a JWT', detail: 'Inspect header and claims without mistaking decoding for trust.' },
-  { slug: 'jwt-encoder', category: 'TOKENS', title: 'Sign a JWT', detail: 'Create a JWS with a selected algorithm and locally held key.' },
-  { slug: 'jwt-verifier', category: 'TOKENS', title: 'Verify a JWT', detail: 'Check a signature and optional issuer or audience claims.' },
-  { slug: 'jwe-encryptor', category: 'TOKENS', title: 'Encrypt a JWE', detail: 'Encrypt JSON using supported JWE key-management options.' },
-  { slug: 'jwe-decryptor', category: 'TOKENS', title: 'Decrypt a JWE', detail: 'Decrypt a five-part compact JWE with a matching key.' },
-  { slug: 'jwt-key-generator', category: 'TOKENS', title: 'Generate key material', detail: 'Create compatible symmetric or asymmetric material locally.' },
-  { slug: 'json-formatter', category: 'JSON', title: 'Format JSON', detail: 'Turn compact JSON into a readable structure.' },
-  { slug: 'json-minifier', category: 'JSON', title: 'Minify JSON', detail: 'Remove structural whitespace while preserving numeric spelling.' },
-  { slug: 'json-validator', category: 'JSON', title: 'Validate JSON syntax', detail: 'Check JSON grammar, not schemas or business rules.' },
-  { slug: 'json-to-java', category: 'JAVA', title: 'Generate Java models', detail: 'Infer nested records or POJOs from a representative object.' },
-  { slug: 'base64-converter', category: 'ENCODING', title: 'Convert Base64 text', detail: 'Encode or decode standard Base64 UTF-8 text.' },
-  { slug: 'base128-converter', category: 'ENCODING', title: 'Convert JStack Base128', detail: 'Use the matching decoder for this custom Braille mapping.' },
+type HomeTool = {
+  slug: string
+  category: 'JWT & JWE' | 'JSON' | 'JAVA' | 'ENCODING'
+  title: string
+  description: string
+  badge?: string
+}
+
+const homeTools: HomeTool[] = [
+  { slug: 'jwt-decoder', category: 'JWT & JWE', title: 'JWT decoder', description: 'Inspect token header, payload and signature.', badge: 'JWT' },
+  { slug: 'jwt-encoder', category: 'JWT & JWE', title: 'JWT encoder and signer', description: 'Create a signed JWT with your selected key.', badge: 'JWS' },
+  { slug: 'jwt-verifier', category: 'JWT & JWE', title: 'JWT signature verifier', description: 'Check signature, issuer and audience claims.', badge: 'JWS' },
+  { slug: 'jwe-encryptor', category: 'JWT & JWE', title: 'JWE encryptor', description: 'Encrypt JSON into a compact JWE.', badge: 'JWE' },
+  { slug: 'jwe-decryptor', category: 'JWT & JWE', title: 'JWE decryptor', description: 'Decrypt a compact JWE with its key.', badge: 'JWE' },
+  { slug: 'jwt-key-generator', category: 'JWT & JWE', title: 'JWT key generator', description: 'Generate signing or encryption key material.' },
+  { slug: 'json-formatter', category: 'JSON', title: 'JSON formatter', description: 'Indent JSON to make it easier to read.' },
+  { slug: 'json-minifier', category: 'JSON', title: 'JSON minifier', description: 'Remove whitespace without changing JSON values.' },
+  { slug: 'json-validator', category: 'JSON', title: 'JSON validator', description: 'Check JSON syntax, not schemas.' },
+  { slug: 'json-to-java', category: 'JAVA', title: 'JSON to Java generator', description: 'Generate Java 16+ records or POJOs from JSON.', badge: 'JAVA' },
+  { slug: 'base64-converter', category: 'ENCODING', title: 'Base64 encoder and decoder', description: 'Encode or decode UTF-8 text.' },
+  { slug: 'base128-converter', category: 'ENCODING', title: 'JStack Base128 converter', description: 'Use JStack’s custom UTF-8 text encoding.' },
+]
+
+const homeGuides = [
+  {
+    label: 'JWT SECURITY',
+    title: 'JWT decoding is not signature verification',
+    description: 'Understand signatures, claims, and authorization in a JWT flow.',
+    href: '/blog/jwt-signature-verification',
+  },
+  {
+    label: 'JAVA MODELS',
+    title: 'Turn JSON examples into Java models',
+    description: 'Review records, POJOs, nulls, arrays, and inferred types.',
+    href: '/blog/json-to-java-records',
+  },
+  {
+    label: 'TEXT ENCODING',
+    title: 'Base64, Base64URL, and JStack Base128',
+    description: 'Compare text encodings and learn why they are not encryption.',
+    href: '/blog/base64-vs-base128',
+  },
 ]
 
 function getRequestedTool() {
@@ -471,14 +500,14 @@ function App() {
     const jsonRoute = Object.values(toolRoutes).find((item) => item.section === 'json' && item.jsonMode === jsonMode) ?? toolRoutes['json-formatter']
     const javaRoute = toolRoutes['json-to-java']
     const pageTitle = route?.title ?? (isHome
-      ? 'JStack – Free Java Developer Tools for JWT, JSON & Base64'
+      ? 'Free Online Java Developer Tools for JWT, JSON & Base64 | JStack'
       : section === 'jwt' ? jwtRoute.title
         : section === 'json' ? jsonRoute.title
         : section === 'base64' ? (encodingFormat === 'base128' ? toolRoutes['base128-converter'].title : toolRoutes['base64-converter'].title)
           : section === 'java' ? javaRoute.title
           : 'About JStack · Browser-Based Developer Tools')
     const pageDescription = route?.description ?? (isHome
-      ? 'Free online Java developer tools for inspecting JWTs, formatting JSON, generating Java models, and converting text in your browser.'
+      ? 'Use free online JWT, JSON, Java, and Base64 developer tools. Decode or sign tokens, format JSON, generate Java models, and convert text.'
       : section === 'jwt' ? jwtRoute.description
         : section === 'json' ? jsonRoute.description
         : section === 'base64' ? (encodingFormat === 'base128' ? toolRoutes['base128-converter'].description : toolRoutes['base64-converter'].description)
@@ -554,6 +583,7 @@ function App() {
     if (!route) return
     invalidatePendingOperation()
     clearToolResult(route)
+    setToolSearch('')
     setSection(route.section)
     if (route.jwtMode) setJwtMode(route.jwtMode)
     alignAlgorithmWithRoute(route)
@@ -591,10 +621,13 @@ function App() {
     setSidebarOpen(false)
     if (window.location.pathname !== '/' || window.location.search) window.history.pushState({}, '', '/')
   }
-  const matchesToolSearch = (names: string) => {
-    const query = toolSearch.trim().toLowerCase()
-    return !query || names.toLowerCase().includes(query)
-  }
+  const toolSearchTerms = toolSearch.trim().toLowerCase().split(/\s+/).filter(Boolean)
+  const matchingTools = toolSearchTerms.length
+    ? Object.entries(toolRoutes).filter(([slug, route]) => {
+      const searchableText = `${toolDisplayNames[slug]} ${route.heading} ${route.description} ${slug}`.toLowerCase()
+      return toolSearchTerms.every((term) => searchableText.includes(term))
+    })
+    : []
   const moveTabSelection = (
     event: React.KeyboardEvent<HTMLButtonElement>,
     values: readonly string[],
@@ -1172,15 +1205,25 @@ function App() {
         <div className="sidebar-topline"><span className="sidebar-workspace-label">TOOLS</span></div>
         <nav aria-label="Main navigation">
           <label className="nav-tool-search"><Search size={15} /><span className="sr-only">Filter tools</span><input value={toolSearch} onChange={(event) => setToolSearch(event.target.value)} placeholder="Filter tools..." /></label>
-          {matchesToolSearch('jwt workbench jws jwe security') && <p className="nav-caption">SECURITY</p>}
-          {matchesToolSearch('jwt workbench jws jwe security') && <button className={`nav-item nav-item-jwt ${section === 'jwt' ? 'active' : ''}`} onClick={() => navigate('jwt')}><span className="nav-icon"><ShieldCheck size={17} /></span><span className="nav-item-copy"><b>JWT Workbench</b></span></button>}
-          {matchesToolSearch('base64 base128 encoding text') && <><p className="nav-caption nav-caption-spaced">ENCODING</p><button className={`nav-item nav-item-base64 ${section === 'base64' ? 'active' : ''}`} onClick={() => navigate('base64')}><span className="nav-icon"><ArrowUpDown size={17} /></span><span className="nav-item-copy"><b>Base64 / 128</b></span></button></>}
-          {matchesToolSearch('json studio formatter validator minifier') && <><p className="nav-caption nav-caption-spaced">FORMATTING</p><button className={`nav-item nav-item-json ${section === 'json' ? 'active' : ''}`} onClick={() => navigate('json')}><span className="nav-icon"><Braces size={17} /></span><span className="nav-item-copy"><b>JSON Studio</b></span></button></>}
-          {matchesToolSearch('json to java java pojo record model') && <><p className="nav-caption nav-caption-spaced">JAVA</p><button className={`nav-item nav-item-java ${section === 'java' ? 'active' : ''}`} onClick={() => navigate('java')}><span className="nav-icon"><Code2 size={17} /></span><span className="nav-item-copy"><b>JSON to Java</b></span></button></>}
-          {recentTools.length > 0 && <><p className="nav-caption nav-caption-spaced">RECENT</p>{recentTools.slice(0, 4).map((slug) => {
-            return <button key={slug} className="nav-item recent-nav-item" onClick={() => openTool(slug)}><span className="nav-icon"><Clock3 size={16} /></span><span className="nav-item-copy"><b>{toolDisplayNames[slug] || slug}</b></span></button>
-          })}<button className="nav-clear-button" onClick={clearRecentTools}>Clear history</button></>}
-          {favoriteTools.length > 0 && <><p className="nav-caption nav-caption-spaced">FAVORITES</p>{favoriteTools.slice(0, 4).map((slug) => <button key={slug} className="nav-item" onClick={() => openTool(slug)}><span className="nav-icon"><Star size={16} /></span><span className="nav-item-copy"><b>{toolDisplayNames[slug] || slug}</b></span></button>)}<button className="nav-clear-button" onClick={clearFavoriteTools}>Clear favorites</button></>}
+          {toolSearchTerms.length > 0 ? <>
+            <p className="nav-caption">SEARCH RESULTS</p>
+            {matchingTools.length > 0
+              ? matchingTools.map(([slug]) => <button key={slug} className="nav-item" onClick={() => openTool(slug)}><span className="nav-icon"><TerminalSquare size={16} /></span><span className="nav-item-copy"><b>{toolDisplayNames[slug]}</b></span></button>)
+              : <p className="nav-search-empty" role="status">No tools found. Try JWT, JSON, Java, or Base64.</p>}
+          </> : <>
+            <p className="nav-caption">SECURITY</p>
+            <button className={`nav-item nav-item-jwt ${section === 'jwt' ? 'active' : ''}`} onClick={() => navigate('jwt')}><span className="nav-icon"><ShieldCheck size={17} /></span><span className="nav-item-copy"><b>JWT Workbench</b></span></button>
+            <p className="nav-caption nav-caption-spaced">ENCODING</p>
+            <button className={`nav-item nav-item-base64 ${section === 'base64' ? 'active' : ''}`} onClick={() => navigate('base64')}><span className="nav-icon"><ArrowUpDown size={17} /></span><span className="nav-item-copy"><b>Base64 / 128</b></span></button>
+            <p className="nav-caption nav-caption-spaced">FORMATTING</p>
+            <button className={`nav-item nav-item-json ${section === 'json' ? 'active' : ''}`} onClick={() => navigate('json')}><span className="nav-icon"><Braces size={17} /></span><span className="nav-item-copy"><b>JSON Studio</b></span></button>
+            <p className="nav-caption nav-caption-spaced">JAVA</p>
+            <button className={`nav-item nav-item-java ${section === 'java' ? 'active' : ''}`} onClick={() => navigate('java')}><span className="nav-icon"><Code2 size={17} /></span><span className="nav-item-copy"><b>JSON to Java</b></span></button>
+            {recentTools.length > 0 && <><p className="nav-caption nav-caption-spaced">RECENT</p>{recentTools.slice(0, 4).map((slug) => {
+              return <button key={slug} className="nav-item recent-nav-item" onClick={() => openTool(slug)}><span className="nav-icon"><Clock3 size={16} /></span><span className="nav-item-copy"><b>{toolDisplayNames[slug] || slug}</b></span></button>
+            })}<button className="nav-clear-button" onClick={clearRecentTools}>Clear history</button></>}
+            {favoriteTools.length > 0 && <><p className="nav-caption nav-caption-spaced">FAVORITES</p>{favoriteTools.slice(0, 4).map((slug) => <button key={slug} className="nav-item" onClick={() => openTool(slug)}><span className="nav-icon"><Star size={16} /></span><span className="nav-item-copy"><b>{toolDisplayNames[slug] || slug}</b></span></button>)}<button className="nav-clear-button" onClick={clearFavoriteTools}>Clear favorites</button></>}
+          </>}
         </nav>
         <nav className="mobile-site-links" aria-label="Site pages">
           <p className="nav-caption">JSTACK</p>
@@ -1202,7 +1245,6 @@ function App() {
           <div className="page-primary">
         {isHomepage && <HomePage onOpenTool={openTool} />}
         {section === 'jwt' && !isHomepage && <>
-          <nav className="app-breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span aria-current="page">{requestedTool && toolDisplayNames[requestedTool] ? toolDisplayNames[requestedTool] : 'JWT Workbench'}</span></nav>
           <div className="page-heading"><div><h1>{jwtMode === 'Decode' ? 'JWT Decoder' : jwtMode === 'Encode & sign' ? 'JWT Encoder' : jwtMode === 'Verify' ? 'JWT Verifier' : jwtMode === 'Encrypt' ? 'JWE Encryptor' : jwtMode === 'Decrypt' ? 'JWE Decryptor' : 'JWT Keys'}</h1><p>Process token data securely inside this tab.</p></div><div className="heading-actions"><button className="icon-button favorite-button" aria-label="Favorite this tool" aria-pressed={favoriteTools.includes(jwtMode === 'Decode' ? 'jwt-decoder' : jwtMode === 'Encode & sign' ? 'jwt-encoder' : jwtMode === 'Verify' ? 'jwt-verifier' : jwtMode === 'Encrypt' ? 'jwe-encryptor' : jwtMode === 'Decrypt' ? 'jwe-decryptor' : 'jwt-key-generator')} onClick={() => toggleFavorite(jwtMode === 'Decode' ? 'jwt-decoder' : jwtMode === 'Encode & sign' ? 'jwt-encoder' : jwtMode === 'Verify' ? 'jwt-verifier' : jwtMode === 'Encrypt' ? 'jwe-encryptor' : jwtMode === 'Decrypt' ? 'jwe-decryptor' : 'jwt-key-generator')}><Star size={16} /></button><button className="button button-secondary sample-button" onClick={loadExample}><WandSparkles size={15} /> Example</button></div></div>
           <div className="jwt-tabs" role="tablist" aria-label="JWT operations">{jwtModes.map((mode) => <button key={mode} id={`jwt-tab-${mode.toLowerCase().replace(/[^a-z]+/g, '-')}`} role="tab" aria-controls="jwt-workbench-panel" aria-selected={jwtMode === mode} tabIndex={jwtMode === mode ? 0 : -1} className={jwtMode === mode ? 'active' : ''} onKeyDown={(event) => moveTabSelection(event, jwtModes, jwtMode, (value) => { const slug = Object.keys(toolRoutes).find((key) => toolRoutes[key].jwtMode === value); if (slug) openTool(slug); setNotice(null); setDecoded(null) })} onClick={() => { const slug = Object.keys(toolRoutes).find((key) => toolRoutes[key].jwtMode === mode); if (slug) openTool(slug); setNotice(null); setDecoded(null) }}>{mode === 'Encrypt' || mode === 'Decrypt' ? <LockKeyhole size={14} /> : mode === 'Keys' ? <FileKey2 size={14} /> : null}{mode}</button>)}</div>
           <div className="workbench-grid" id="jwt-workbench-panel" role="tabpanel" onInput={() => { invalidatePendingOperation(); clearJwtOutput() }}>
@@ -1262,7 +1304,6 @@ function App() {
         </>}
 
         {section === 'json' && <>
-          <nav className="app-breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span aria-current="page">{toolDisplayNames[requestedTool || 'json-formatter'] || 'JSON formatter'}</span></nav>
           <div className="page-heading converter-heading"><div><h1>JSON Tools</h1><p>Format, minify, or validate JSON locally.</p></div><div className="heading-actions"><button className="icon-button favorite-button" aria-label="Favorite this tool" aria-pressed={favoriteTools.includes(requestedTool || 'json-formatter')} onClick={() => toggleFavorite(requestedTool || 'json-formatter')}><Star size={16} /></button><button className="button button-secondary sample-button" onClick={loadExample}><WandSparkles size={15} /> Load example</button></div></div>
           <section className="converter-workspace json-workspace" onInput={() => { invalidatePendingOperation(); setConverterOutput(''); setConverterError(''); setConverterHasRun(false) }}><div className="converter-toolbar"><div className="converter-title"><span className="converter-title-icon"><Braces size={17} /></span><div><b>JSON formatter & validator</b></div></div><div className="json-mode-tabs" role="tablist" aria-label="JSON operation">{(['format', 'minify', 'validate'] as const).map((mode) => <button key={mode} role="tab" aria-selected={jsonMode === mode} tabIndex={jsonMode === mode ? 0 : -1} className={jsonMode === mode ? 'active' : ''} onKeyDown={(event) => moveTabSelection(event, ['format', 'minify', 'validate'], jsonMode, (value) => { const slug = value === 'format' ? 'json-formatter' : value === 'minify' ? 'json-minifier' : 'json-validator'; openTool(slug); setConverterOutput(''); setConverterError(''); setConverterHasRun(false) })} onClick={() => { openTool(mode === 'format' ? 'json-formatter' : mode === 'minify' ? 'json-minifier' : 'json-validator'); setConverterOutput(''); setConverterError(''); setConverterHasRun(false) }}>{mode}</button>)}</div></div>
             <div className="converter-editors"><div className="converter-pane"><div className="pane-heading"><label htmlFor="converter-input">JSON INPUT</label><button onClick={() => { invalidatePendingOperation(); setConverterInput(''); setConverterOutput(''); setConverterError(''); setConverterHasRun(false) }}><X size={13} /> Clear</button></div><textarea id="converter-input" className="code-editor converter-editor" value={converterInput} onChange={(event) => setConverterInput(event.target.value)} onKeyDown={(event) => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); void runConverter() } }} placeholder="Paste JSON here…" spellCheck={false} /><div className="pane-footer"><span>{converterInput.length} characters · max {MAX_TOOL_INPUT_LENGTH.toLocaleString()}</span><button onClick={loadExample}><WandSparkles size={12} /> Example</button></div></div>
@@ -1274,7 +1315,6 @@ function App() {
 
         </>}
         {section === 'java' && <>
-          <nav className="app-breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span aria-current="page">JSON to Java models</span></nav>
           <div className="page-heading converter-heading"><div><h1>JSON To Java Models</h1><p>Generate Java records or POJO classes locally.</p></div><div className="heading-actions"><button className="icon-button favorite-button" aria-label="Favorite this tool" aria-pressed={favoriteTools.includes('json-to-java')} onClick={() => toggleFavorite('json-to-java')}><Star size={16} /></button><button className="button button-secondary sample-button" onClick={loadExample}><WandSparkles size={15} /> Load example</button></div></div>
           <section className="converter-workspace json-workspace java-workspace">
             <div className="converter-toolbar java-toolbar">
@@ -1304,7 +1344,6 @@ function App() {
           <div className="java-note"><CircleHelp size={15} /><span><b>Output notes.</b> Nullable fields use reference types; empty or mixed values use <code>Object</code>. Records require Java 16 or newer. Renamed JSON keys add Jackson <code>@JsonProperty</code> annotations and require <code>jackson-annotations</code>.</span></div>
         </>}
         {section === 'base64' && <>
-          <nav className="app-breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span aria-current="page">{toolDisplayNames[requestedTool || (encodingFormat === 'base128' ? 'base128-converter' : 'base64-converter')]}</span></nav>
           <div className="page-heading converter-heading"><div><h1>{encodingFormat === 'base64' ? 'Base64 Converter' : 'Base128 Converter'}</h1><p>{encodingFormat === 'base64' ? 'Encode or decode UTF-8 text.' : 'Use JStack’s custom printable 7-bit format.'}</p></div><div className="heading-actions"><button className="icon-button favorite-button" aria-label="Favorite this tool" aria-pressed={favoriteTools.includes(requestedTool || (encodingFormat === 'base128' ? 'base128-converter' : 'base64-converter'))} onClick={() => toggleFavorite(requestedTool || (encodingFormat === 'base128' ? 'base128-converter' : 'base64-converter'))}><Star size={16} /></button><button className="button button-secondary sample-button" onClick={loadExample}><WandSparkles size={15} /> Load example</button></div></div>
           <div className="encoding-format-switch" role="tablist" aria-label="Encoding format">
             <button role="tab" aria-selected={encodingFormat === 'base64'} tabIndex={encodingFormat === 'base64' ? 0 : -1} className={encodingFormat === 'base64' ? 'active' : ''} onKeyDown={(event) => moveTabSelection(event, ['base64', 'base128'], encodingFormat, (value) => openTool(value === 'base64' ? 'base64-converter' : 'base128-converter'))} onClick={() => openTool('base64-converter')}><span className="encoding-format-icon"><ArrowUpDown size={17} /></span><span><b>Base64</b><small>Standard format</small></span></button>
@@ -1332,7 +1371,7 @@ function App() {
 }
 
 function HomePage({ onOpenTool }: { onOpenTool: (slug: string) => void }) {
-  const groupedTools = ['TOKENS', 'JSON', 'JAVA', 'ENCODING'].map((category) => ({
+  const groupedTools = ['JWT & JWE', 'JSON', 'JAVA', 'ENCODING'].map((category) => ({
     category,
     tools: homeTools.filter((tool) => tool.category === category),
   }))
@@ -1340,50 +1379,55 @@ function HomePage({ onOpenTool }: { onOpenTool: (slug: string) => void }) {
   return <div className="home-page">
     <section className="home-hero">
       <div className="home-hero-copy">
-        <h1>Practical tools for Java and backend work.</h1>
-        <p>Inspect tokens, shape JSON, generate Java models, and convert text with focused browser-based utilities. No account is required.</p>
-        <div className="home-hero-actions">
-          <button className="button button-primary" onClick={() => onOpenTool('jwt-decoder')}><ShieldCheck size={16} /> Explore the tools</button>
-          <a className="home-secondary-link" href="/learning">Browse practical tutorials <span aria-hidden="true">→</span></a>
-        </div>
-        <p className="home-shortcut"><kbd>Ctrl</kbd> + <kbd>K</kbd> Search tools and pages</p>
-      </div>
-      <aside className="home-privacy-card">
-        <span className="home-privacy-icon"><LockKeyhole size={18} /></span>
-        <b>Runs in this browser</b>
-        <p>Tool inputs are handled in the current page and are not sent to a JStack application backend. Your browser and hosting provider remain part of the trust boundary.</p>
-        <a href="/privacy">How data is handled <span aria-hidden="true">→</span></a>
-      </aside>
-    </section>
-
-    <section className="home-workflows" aria-labelledby="home-workflows-title">
-      <div className="home-section-heading"><div><span>START WITH A TASK</span><h2 id="home-workflows-title">Useful workflows, without the guesswork</h2></div><a href="/guide">Read the developer guide →</a></div>
-      <div className="home-workflow-grid">
-        <article><span className="home-workflow-icon"><ShieldCheck size={17} /></span><h3>Inspect a token safely</h3><p>Decode to inspect claims, then verify using the algorithm and trusted key your application expects. Decoding alone is never proof of validity.</p><button onClick={() => onOpenTool('jwt-decoder')}>Open JWT decoder →</button></article>
-        <article><span className="home-workflow-icon"><Braces size={17} /></span><h3>Turn sample data into Java</h3><p>Format a JSON example, generate a record or POJO, and review inferred types before adapting the result to your API contract.</p><button onClick={() => onOpenTool('json-to-java')}>Generate Java models →</button></article>
-        <article><span className="home-workflow-icon"><Code2 size={17} /></span><h3>Learn by working through examples</h3><p>Follow practical notes on JWT verification, Spring resource servers, Java model design, and the limits of text encodings.</p><a href="/learning">Visit the Learning Center →</a><p><a href="/blog">Browse the developer articles →</a></p></article>
+        <h1>Java &amp; Backend Developer Workbench</h1>
+        <p>100% client-side tools. Your tokens and JSON are processed in this browser—not uploaded to JStack.</p>
+        <p className="home-shortcut"><kbd>Ctrl</kbd> + <kbd>K</kbd> Search all tools</p>
       </div>
     </section>
 
     <section className="home-tools" aria-labelledby="home-tools-title">
-      <div className="home-section-heading"><div><span>TOOLBOX</span><h2 id="home-tools-title">Pick the operation you need</h2></div><span className="home-tool-count">12 browser tools</span></div>
-      <div className="home-tool-groups">{groupedTools.map(({ category, tools }) =>
-        <section className="home-tool-group" key={category} aria-label={`${category.toLowerCase()} tools`}>
-          <h3>{category}</h3>
-          <div className="home-tool-grid">{tools.map((tool) =>
-            <button className="home-tool-card" key={tool.slug} onClick={() => onOpenTool(tool.slug)}>
-              <span className="home-tool-title">{tool.title}<span aria-hidden="true">↗</span></span>
-              <span className="home-tool-detail">{tool.detail}</span>
-            </button>
-          )}</div>
-        </section>
-      )}</div>
+      <div className="home-section-heading"><div><span>DEVELOPER TOOLS</span><h2 id="home-tools-title">Choose a tool</h2></div><span className="home-tool-count">12 free tools</span></div>
+      <div className="home-tool-groups">{groupedTools.map(({ category, tools }) => {
+        const Icon = category === 'JWT & JWE' ? ShieldCheck
+          : category === 'JSON' ? Braces
+            : category === 'JAVA' ? Code2
+              : ArrowUpDown
+        const categoryClass = category === 'JWT & JWE' ? 'jwt'
+          : category === 'JSON' ? 'json'
+            : category === 'JAVA' ? 'java'
+              : 'encoding'
+        return <Fragment key={category}>
+          <section className="home-tool-group" aria-label={`${category.toLowerCase()} tools`}>
+            <h3>{category}</h3>
+            <div className="home-tool-grid">{tools.map((tool) =>
+              <button className="home-tool-card" key={tool.slug} aria-label={`Open ${tool.title}`} onClick={() => onOpenTool(tool.slug)}>
+                <span className={`home-tool-icon home-tool-icon-${categoryClass}`} aria-hidden="true"><Icon size={17} /></span>
+                <span className="home-tool-content">
+                  <span className="home-tool-heading"><span className="home-tool-title">{tool.title}</span>{tool.badge && <span className="home-tool-badge">{tool.badge}</span>}</span>
+                  <span className="home-tool-detail">{tool.description}</span>
+                </span>
+                <span className="home-tool-arrow" aria-hidden="true">→</span>
+              </button>
+            )}</div>
+          </section>
+          {category === 'JWT & JWE' && <aside className="home-ad-slot" aria-label="Advertisement"><span>Advertisement</span></aside>}
+        </Fragment>
+      })}</div>
     </section>
 
-    <section className="home-principles" aria-label="Product notes">
-      <div><b>Local-first operations</b><span>Tokens, keys, JSON, and text stay in page memory during tool use.</span></div>
-      <div><b>Clear security boundaries</b><span>Decode is not verify. Verify is not authorization. Base64 is not encryption.</span></div>
-      <div><b>Useful without an account</b><span>Favorites and recent tools are optional browser preferences, not a registration requirement.</span></div>
+    <section className="home-guides" aria-labelledby="home-guides-title">
+      <div className="home-section-heading">
+        <div><span>LEARN &amp; BUILD</span><h2 id="home-guides-title">Developer Guides &amp; Security</h2></div>
+        <a href="/learning">Visit Learning Center <span aria-hidden="true">→</span></a>
+      </div>
+      <div className="home-guide-grid">{homeGuides.map((guide) =>
+        <a className="home-guide-card" href={guide.href} key={guide.href}>
+          <span className="home-guide-label">{guide.label}</span>
+          <strong>{guide.title}</strong>
+          <span className="home-guide-description">{guide.description}</span>
+          <span className="home-guide-action">Read guide <span aria-hidden="true">→</span></span>
+        </a>
+      )}</div>
     </section>
   </div>
 }

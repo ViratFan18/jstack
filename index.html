@@ -7,25 +7,30 @@
     <meta name="theme-color" content="#0B1015" />
     <script src="/runtime-recovery.js" defer></script>
     <script src="/theme.js" defer></script>
-    <meta name="description" content="Free online Java developer tools for inspecting JWTs, formatting and validating JSON, generating Java models, and converting Base64 text in your browser." />
+    <meta name="description" content="Free online JWT, JSON, Java, and Base64 developer tools. Decode or sign tokens, format JSON, generate Java models, and convert text." />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="JStack – Free Java Developer Tools for JWT, JSON &amp; Base64" />
-    <meta property="og:description" content="Free online Java developer tools for inspecting JWTs, formatting and validating JSON, generating Java models, and converting Base64 text in your browser." />
+    <meta property="og:title" content="Free Online Java Developer Tools for JWT, JSON &amp; Base64 | JStack" />
+    <meta property="og:description" content="Free online JWT, JSON, Java, and Base64 developer tools. Decode or sign tokens, format JSON, generate Java models, and convert text." />
     <meta property="og:image" content="/og-card.svg" />
     <meta property="og:image:alt" content="JStack Java and backend developer tools" />
     <meta name="twitter:card" content="summary_large_image" />
-    <title>JStack – Free Java Developer Tools for JWT, JSON &amp; Base64</title>
+    <title>Free Online Java Developer Tools for JWT, JSON &amp; Base64 | JStack</title>
     <style>
-      .seo-fallback { max-width: 760px; margin: 0 auto; padding: 48px 22px; font: 16px/1.6 "Segoe UI", sans-serif; color: var(--ink, #20302b); }
+      .seo-fallback { max-width: 980px; margin: 0 auto; padding: 48px 22px; font: 16px/1.6 "Segoe UI", sans-serif; color: var(--ink, #20302b); }
       .seo-fallback h1 { font-size: clamp(30px, 5vw, 42px); line-height: 1.15; }
       .seo-fallback nav { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+      .seo-fallback .guide-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 20px; }
+      .seo-fallback article { padding: 16px; border: 1px solid #d5ded9; border-radius: 12px; }
+      .seo-fallback article h3 { margin: 0 0 6px; font-size: 17px; }
+      .seo-fallback article p { margin: 0; font-size: 14px; }
+      @media (max-width: 620px) { .seo-fallback .guide-grid { grid-template-columns: 1fr; } }
     </style>
   </head>
   <body>
     <div id="root">
       <main class="seo-fallback">
-        <h1>Free Java Developer Tools for JWT, JSON and Java Models</h1>
-        <p>Inspect JWTs, format JSON, generate Java records and POJOs, and convert text with practical browser-based tools. Your tool inputs stay in your browser.</p>
+        <h1>Java &amp; Backend Developer Workbench</h1>
+        <p>Client-side JWT, JSON, Java, and Base64 tools. Your tokens and JSON are processed in this browser—not uploaded to JStack.</p>
         <nav aria-label="Developer tool guides">
           <a href="/jwt-decoder">JWT decoder</a>
           <a href="/jwt-encoder">JWT encoder and signer</a>
@@ -40,7 +45,15 @@
           <a href="/base64-converter">Base64 text converter</a>
           <a href="/base128-converter">JStack Base128 converter</a>
         </nav>
-        <p>Learn more in the <a href="/learning">Java and backend Learning Center</a>, the <a href="/blog">developer articles</a>, or the <a href="/guide">JWT and backend security guide</a>. <a href="/about">About JStack</a> · <a href="/contact">Contact</a></p>
+        <section aria-labelledby="developer-guides-title">
+          <h2 id="developer-guides-title">Developer Guides &amp; Security</h2>
+          <div class="guide-grid">
+            <article><h3><a href="/blog/jwt-signature-verification">JWT decoding is not signature verification</a></h3><p>Understand token signatures, claims, and authorization in a JWT flow.</p></article>
+            <article><h3><a href="/blog/json-to-java-records">Turn JSON examples into Java models</a></h3><p>Review records, POJOs, nulls, arrays, and inferred data types.</p></article>
+            <article><h3><a href="/blog/base64-vs-base128">Base64, Base64URL, and JStack Base128</a></h3><p>Compare text encodings and learn why they are not encryption.</p></article>
+          </div>
+        </section>
+        <p>Explore the <a href="/learning">Java and backend Learning Center</a>, <a href="/blog">developer articles</a>, and <a href="/guide">JWT and backend security guide</a>. <a href="/about">About JStack</a> · <a href="/contact">Contact</a></p>
       </main>
     </div>
     <script type="module" src="/src/main.tsx"></script>

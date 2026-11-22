@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 
 const publicRoutes = [
-  { path: '/', heading: 'Practical tools for Java and backend work.' },
+  { path: '/', heading: 'Java & Backend Developer Workbench' },
   { path: '/jwt-decoder', heading: 'Free online JWT decoder' },
   { path: '/jwt-encoder', heading: 'Free online JWT encoder and signer' },
   { path: '/jwt-verifier', heading: 'Free online JWT signature verifier' },
@@ -38,6 +38,18 @@ test('public routes render their own page and fit the viewport', async ({ page }
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)
     expect(overflow, route.path).toBe(false)
   }
+})
+
+test('homepage launches tools directly and workspace pages omit visible breadcrumbs', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.locator('.home-tool-card')).toHaveCount(12)
+  await expect(page.getByRole('heading', { name: 'Java & Backend Developer Workbench' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Smart Paste' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Paste from Clipboard' })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Open JSON formatter' }).click()
+  await expect(page).toHaveURL(/\/app\/json-formatter$/)
+  await expect(page.getByRole('heading', { name: 'JSON Tools' })).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toHaveCount(0)
 })
 
 test('public SEO metadata, sitemap, robots, and internal links are consistent', async ({ request }) => {
@@ -81,6 +93,9 @@ test('public SEO metadata, sitemap, robots, and internal links are consistent', 
       })
     if (route.path === '/') {
       expect(structuredData.some(({ '@type': type }) => type === 'WebSite')).toBe(true)
+      expect(html).toContain('href="/blog/jwt-signature-verification"')
+      expect(html).toContain('href="/blog/json-to-java-records"')
+      expect(html).toContain('href="/blog/base64-vs-base128"')
     } else {
       expect(structuredData.filter(({ '@type': type }) => type === 'BreadcrumbList')).toHaveLength(1)
     }
@@ -408,7 +423,7 @@ test('tool routes use clean URLs and restore browser history', async ({ page }) 
 
 test('quick launch updates clean route history', async ({ page }) => {
   await page.goto('/')
-  await page.getByRole('button', { name: /Generate Java models/ }).first().click()
+  await page.getByRole('button', { name: 'Open JSON to Java generator' }).click()
   await expect(page).toHaveURL(/\/app\/json-to-java$/)
   await expect(page.getByRole('heading', { name: 'JSON To Java Models' })).toBeVisible()
   await page.goBack()
@@ -427,6 +442,19 @@ test('favorites reopen the interactive tool and can be cleared', async ({ page }
   await expect(page).toHaveURL(/\/app\/json-formatter$/)
   await page.getByRole('button', { name: 'Clear favorites' }).click()
   await expect(page.getByText('FAVORITES', { exact: true })).toHaveCount(0)
+})
+
+test('sidebar tool search shows matching tools and opens the selected result', async ({ page }) => {
+  await page.goto('/app/jwt-encoder')
+  const search = page.getByRole('textbox', { name: 'Filter tools' })
+  await search.fill('decoder JWT')
+  const decoder = page.getByRole('button', { name: 'JWT decoder', exact: true })
+  await expect(decoder).toBeVisible()
+  await expect(page.getByRole('button', { name: 'JWT encoder and signer', exact: true })).toHaveCount(0)
+  await decoder.click()
+  await expect(page).toHaveURL(/\/app\/jwt-decoder$/)
+  await expect(page.getByRole('heading', { name: 'JWT Decoder' })).toBeVisible()
+  await expect(search).toHaveValue('')
 })
 
 test('stored tool lists ignore unknown and inherited property names', async ({ page }) => {
@@ -698,15 +726,19 @@ test('feedback prepares a real email draft without claiming it was sent', async 
   await expect(draft).toHaveAttribute('href', /^mailto:shaikmukhuran@gmail\.com\?subject=JStack%20Bug%20report&body=/)
 })
 
-test('homepage explains workflows and links to all tool groups', async ({ page }) => {
+test('homepage provides detailed tool cards, a stable ad slot, and technical guides', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByText('No account is required.')).toBeVisible()
-  await expect(page.getByText('Decode is not verify. Verify is not authorization. Base64 is not encryption.')).toBeVisible()
-  await expect(page.getByRole('region', { name: 'tokens tools' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Java & Backend Developer Workbench' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'jwt & jwe tools' })).toBeVisible()
   await expect(page.getByRole('region', { name: 'json tools' })).toBeVisible()
   await expect(page.getByRole('region', { name: 'java tools' })).toBeVisible()
   await expect(page.getByRole('region', { name: 'encoding tools' })).toBeVisible()
-  await expect(page.getByRole('button', { name: /JStack Base128/ })).toBeVisible()
+  await expect(page.locator('.home-tool-card')).toHaveCount(12)
+  await expect(page.getByText('Inspect token header, payload and signature.')).toBeVisible()
+  await expect(page.locator('.home-ad-slot')).toHaveCSS('height', '100px')
+  await expect(page.getByRole('heading', { name: 'Developer Guides & Security' })).toBeVisible()
+  await expect(page.getByRole('link', { name: /JWT decoding is not signature verification/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Open JStack Base128 converter' })).toBeVisible()
 })
 
 test('homepage and static pages avoid repeated footer links and section labels', async ({ page }) => {
@@ -747,20 +779,38 @@ test('global command palette searches tools and informational pages with keyboar
   await expect(page.getByRole('heading', { name: 'Base64, Base64URL, and JStack Base128' })).toBeVisible()
 })
 
-test('static pages share keyboard search, breadcrumbs, and complete footer navigation', async ({ page }) => {
+test('static pages share keyboard search and complete footer navigation without breadcrumbs', async ({ page }) => {
   await page.goto('/learning')
   await page.getByRole('button', { name: 'Search JStack tools and pages' }).click()
   const dialog = page.getByRole('dialog', { name: 'Search JStack tools and pages' })
   await dialog.getByRole('combobox', { name: 'Search JStack tools and pages' }).fill('Changelog')
   await page.keyboard.press('Enter')
   await expect(page).toHaveURL(/\/changelog$/)
-  await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toContainText('Home')
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toHaveCount(0)
   await expect(page.getByRole('navigation', { name: 'All JStack pages' }).getByRole('link', { name: 'Disclaimer' })).toBeVisible()
   await page.goto('/learning')
   await page.getByRole('button', { name: 'Search JStack tools and pages' }).click()
   await page.getByRole('combobox', { name: 'Search JStack tools and pages' }).fill('JWT verification article')
   await page.keyboard.press('Enter')
   await expect(page).toHaveURL(/\/blog\/jwt-signature-verification$/)
+})
+
+test('public pages omit breadcrumbs and links to themselves', async ({ page }) => {
+  for (const { path } of publicRoutes) {
+    await page.goto(path)
+    await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toHaveCount(0)
+    const selfLinks = await page.locator('a[href]').evaluateAll((anchors) => anchors
+      .filter((anchor) => {
+        const href = anchor.getAttribute('href') || ''
+        if (href.startsWith('#')) return false
+        const target = new URL(href, window.location.href)
+        const normalize = (path: string) => path.replace(/\.html$/i, '').replace(/\/+$/, '') || '/'
+        return target.origin === window.location.origin
+          && normalize(target.pathname) === normalize(window.location.pathname)
+      })
+      .map((anchor) => (anchor as HTMLAnchorElement).outerHTML))
+    expect(selfLinks, `${path} has no self-links`).toEqual([])
+  }
 })
 
 test('static command palette remains available when local storage is blocked', async ({ page }) => {

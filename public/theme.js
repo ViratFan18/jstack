@@ -66,6 +66,43 @@ const pageLinks = [
   ['Terms', '/terms'],
   ['Disclaimer', '/disclaimer'],
 ]
+const footerGroups = [
+  {
+    title: 'Tools',
+    links: [
+      ['Tools home', '/'],
+      ['JWT decoder', '/jwt-decoder'],
+      ['JSON formatter', '/json-formatter'],
+      ['JSON to Java', '/json-to-java'],
+      ['Base64 converter', '/base64-converter'],
+    ],
+  },
+  {
+    title: 'Learn',
+    links: [
+      ['Learning Center', '/learning'],
+      ['Developer articles', '/blog'],
+      ['Developer guide', '/guide'],
+      ['Changelog', '/changelog'],
+    ],
+  },
+  {
+    title: 'JStack',
+    links: [
+      ['About', '/about'],
+      ['Contact', '/contact'],
+      ['Feedback', '/feedback'],
+    ],
+  },
+  {
+    title: 'Policies',
+    links: [
+      ['Privacy', '/privacy'],
+      ['Terms', '/terms'],
+      ['Disclaimer', '/disclaimer'],
+    ],
+  },
+]
 const toolLinks = [
   ['JWT decoder', 'jwt-decoder', 'Inspect a JWT header and claims'],
   ['JWT encoder and signer', 'jwt-encoder', 'Create a signed JWS'],
@@ -104,22 +141,19 @@ if (!document.querySelector('.site-skip-link')) {
   document.body.prepend(skipLink)
 }
 
-const heading = main?.querySelector('h1')
-if (heading && location.pathname !== '/' && !main.querySelector('.site-breadcrumbs')) {
-  const breadcrumbs = document.createElement('nav')
-  breadcrumbs.className = 'site-breadcrumbs'
-  breadcrumbs.setAttribute('aria-label', 'Breadcrumb')
-  const home = document.createElement('a')
-  home.href = '/'
-  home.textContent = 'Home'
-  const separator = document.createElement('span')
-  separator.setAttribute('aria-hidden', 'true')
-  separator.textContent = '/'
-  const current = document.createElement('span')
-  current.setAttribute('aria-current', 'page')
-  current.textContent = heading.textContent.trim()
-  breadcrumbs.append(home, separator, current)
-  main.insertBefore(breadcrumbs, heading)
+const normalizePagePath = (path) => {
+  const cleanPath = path.replace(/\.html$/i, '').replace(/\/+$/, '')
+  return cleanPath || '/'
+}
+const isCurrentPageHref = (href) => {
+  if (!href || href.startsWith('#')) return false
+  try {
+    const destination = new URL(href, window.location.href)
+    return destination.origin === window.location.origin
+      && normalizePagePath(destination.pathname) === normalizePagePath(window.location.pathname)
+  } catch {
+    return false
+  }
 }
 
 const footer = document.querySelector('footer')
@@ -130,11 +164,24 @@ if (footer && !footer.querySelector('.site-footer-links')) {
   const links = document.createElement('nav')
   links.className = 'site-footer-links'
   links.setAttribute('aria-label', 'All JStack pages')
-  for (const [label, href] of pageLinks) {
-    const link = document.createElement('a')
-    link.href = href
-    link.textContent = label
-    links.append(link)
+  for (const group of footerGroups) {
+    const groupLinks = group.links.filter(([, href]) => !isCurrentPageHref(href))
+    if (!groupLinks.length) continue
+    const section = document.createElement('section')
+    section.className = 'site-footer-group'
+    const heading = document.createElement('h2')
+    heading.textContent = group.title
+    const list = document.createElement('ul')
+    for (const [label, href] of groupLinks) {
+      const item = document.createElement('li')
+      const link = document.createElement('a')
+      link.href = href
+      link.textContent = label
+      item.append(link)
+      list.append(item)
+    }
+    section.append(heading, list)
+    links.append(section)
   }
   footer.append(links)
 }
@@ -146,6 +193,10 @@ if (nav) {
     blogLink.href = '/blog'
     blogLink.textContent = 'Blog'
     nav.append(blogLink)
+  }
+
+  for (const link of document.querySelectorAll('a[href]')) {
+    if (isCurrentPageHref(link.getAttribute('href'))) link.remove()
   }
 
   const trigger = document.createElement('button')
@@ -183,7 +234,9 @@ if (nav) {
         return { title, description, href: `/app/${slug}`, group, id: `tool-${slug}` }
       }),
       ...toolLinks.map(([title, slug, description]) => ({ title, description, href: `/app/${slug}`, group: 'Tools', id: `tool-${slug}` })),
-      ...pageLinks.map(([title, href]) => ({ title, description: `Open ${title}`, href, group: 'Pages', id: `page-${href}` })),
+      ...pageLinks
+        .filter(([, href]) => !isCurrentPageHref(href))
+        .map(([title, href]) => ({ title, description: `Open ${title}`, href, group: 'Pages', id: `page-${href}` })),
     ].filter((item) => {
       if (seen.has(item.id)) return false
       seen.add(item.id)
