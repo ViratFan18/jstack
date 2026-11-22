@@ -1196,7 +1196,7 @@ function App() {
         </nav>
       </aside>
       {sidebarOpen && <button className="sidebar-scrim" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
-      <main className="main-content">
+      <main id="main-content" className="main-content">
         {isOffline && <p className="connection-notice" role="status">Browser reports offline. Tools work locally after their code is loaded; first-time tool loads and page navigation may need a connection.</p>}
         <div className="page-layout">
           <div className="page-primary">

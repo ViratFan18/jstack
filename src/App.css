@@ -1,4 +1,29 @@
 #root { min-height: 100vh; }
+
+.site-skip-link {
+  position: fixed;
+  z-index: 1001;
+  top: max(8px, env(safe-area-inset-top, 0px));
+  left: max(8px, env(safe-area-inset-left, 0px));
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  transform: translateY(calc(-100% - 16px));
+  border: 1px solid var(--blue);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  font: 600 13px/1 var(--font-sans);
+  text-decoration: none;
+  transition: transform 150ms ease;
+}
+
+.site-skip-link:focus {
+  transform: translateY(0);
+}
+
 .app-shell { min-height: 100vh; color: var(--ink); background: var(--page); }
 .topbar { height: 62px; position: sticky; z-index: 20; top: 0; display: flex; align-items: center; padding: 0 27px; background: var(--surface); border-bottom: 1px solid var(--line); }
 .brand { display: inline-flex; gap: 9px; align-items: center; padding: 0; border: 0; background: none; color: var(--ink); cursor: pointer; font-size: 17px; font-weight: 700; letter-spacing: 0; }

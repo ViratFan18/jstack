@@ -838,6 +838,35 @@ test('static content pages fit narrow mobile widths in both themes', async ({ pa
   await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(244, 248, 250)')
 })
 
+test('skip-to-content link is a mobile-friendly focus button on static and tool pages', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await page.setViewportSize({ width: 320, height: 844 })
+
+  for (const path of ['/about', '/app/json-formatter']) {
+    await page.goto(path)
+    const skipLink = page.getByRole('link', { name: 'Skip to content' })
+    await expect(skipLink).toHaveAttribute('href', '#main-content')
+    await expect(page.locator('#main-content')).toHaveCount(1)
+    await expect(skipLink).toHaveCSS('position', 'fixed')
+    await expect(skipLink).toHaveCSS('min-height', '44px')
+    await expect(skipLink).toHaveCSS('border-radius', '8px')
+
+    const hiddenBox = await skipLink.boundingBox()
+    expect(hiddenBox).not.toBeNull()
+    expect(hiddenBox!.y + hiddenBox!.height).toBeLessThanOrEqual(0)
+
+    await page.keyboard.press('Tab')
+    await expect(skipLink).toBeFocused()
+    await expect(skipLink).toBeInViewport()
+    const focusedBox = await skipLink.boundingBox()
+    expect(focusedBox).not.toBeNull()
+    expect(focusedBox!.x).toBeGreaterThanOrEqual(0)
+    expect(focusedBox!.x + focusedBox!.width).toBeLessThanOrEqual(320)
+    await page.keyboard.press('Enter')
+    await expect(page).toHaveURL(/#main-content$/)
+  }
+})
+
 test('command dialog traps keyboard focus and closes with Escape', async ({ page }) => {
   await page.goto('/app/jwt-encoder')
   await page.getByRole('button', { name: 'Search tools and pages' }).click()
