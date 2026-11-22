@@ -191,6 +191,16 @@ test('production deployment artifacts revalidate documents and retain hashed ass
     expect(routeHtml, `/app/${slug} is excluded from indexing`).toContain('<meta name="robots" content="noindex, follow"')
     expect(routeHtml, `/app/${slug} does not load ads`).not.toContain('adsbygoogle.js')
   }
+
+  for (const [slug, heading] of [
+    ['jwt-signature-verification', 'JWT decoding is not signature verification'],
+    ['json-to-java-records', 'From a JSON example to a Java model'],
+    ['base64-vs-base128', 'Base64, Base64URL, and JStack Base128'],
+  ]) {
+    const routeHtml = await readFile(new URL(`../dist/blog/${slug}/index.html`, import.meta.url), 'utf8')
+    expect(routeHtml, `/blog/${slug} has a generated route document`).toContain(`<h1>${heading}</h1>`)
+    expect(routeHtml, `/blog/${slug} has its canonical URL`).toContain(`href="https://jstack.pages.dev/blog/${slug}"`)
+  }
 })
 
 test('AdSense publisher setup is on public pages without loading in the tool workspace', async ({ request }) => {

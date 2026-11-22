@@ -62,7 +62,7 @@ const staticCleanPageRoutes: Plugin = {
   name: 'jstack-static-clean-page-routes',
   configureServer: addStaticPageRoutes,
   configurePreviewServer(server) {
-    addStaticPageRoutes(server)
+    addStaticPageRoutes(server, true)
     server.middlewares.use((request, response, next) => {
       if (!request.url) return next()
       const pathname = request.url.split('?')[0]
@@ -75,7 +75,7 @@ const staticCleanPageRoutes: Plugin = {
   },
 }
 
-function addStaticPageRoutes(server: ViteDevServer | PreviewServer) {
+function addStaticPageRoutes(server: ViteDevServer | PreviewServer, useBuiltRoutes = false) {
   server.middlewares.use((request, response, next) => {
     if (!request.url) return next()
 
@@ -101,6 +101,16 @@ function addStaticPageRoutes(server: ViteDevServer | PreviewServer) {
 
     const articleFileName = articlePageNames.get(pageName)
     if (articleFileName) {
+      if (useBuiltRoutes) {
+        const generatedPage = resolve(process.cwd(), 'dist', pageName, 'index.html')
+        if (existsSync(generatedPage)) {
+          response.statusCode = 200
+          response.setHeader('Content-Type', 'text/html; charset=utf-8')
+          response.end(readFileSync(generatedPage))
+          return
+        }
+      }
+
       request.url = `/${articleFileName}.html${query}`
       return next()
     }

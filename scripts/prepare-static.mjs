@@ -404,6 +404,12 @@ for (const { slug } of toolPages) {
   await writeFile(join(routeDirectory, 'index.html'), workspaceHtml)
 }
 
+for (const { file, path } of articlePages) {
+  const routeDirectory = join(outputDirectory, path.slice(1))
+  await mkdir(routeDirectory, { recursive: true })
+  await writeFile(join(routeDirectory, 'index.html'), await readFile(join(outputDirectory, file), 'utf8'))
+}
+
 const robotsPath = join(outputDirectory, 'robots.txt')
 const sitemapPath = join(outputDirectory, 'sitemap.xml')
 const urls = sitemapPages.map(({ path }) => `  <url><loc>${siteUrl}${path}</loc></url>`).join('\n')
