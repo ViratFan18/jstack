@@ -811,6 +811,39 @@ test('main search icon and Ctrl+K support flexible search and scrollable results
   expect(activeResultVisible).toBe(true)
 })
 
+test('mobile search finds JWE tools by JWT terms without overlapping or clipping results', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 })
+  await page.goto('/app/jwt-encoder')
+  await page.getByRole('button', { name: 'Open navigation' }).click()
+  const sidebarSearch = page.getByRole('textbox', { name: 'Filter tools' })
+  await sidebarSearch.fill('JWT encrypt')
+  await expect(page.locator('.sidebar').getByRole('button', { name: 'JWE encryptor', exact: true })).toBeVisible()
+  await sidebarSearch.fill('JWT decrypt')
+  await expect(page.locator('.sidebar').getByRole('button', { name: 'JWE decryptor', exact: true })).toBeVisible()
+
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Search tools and pages' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Search JStack tools' })
+  const search = dialog.getByRole('combobox', { name: 'Search JStack tools and pages' })
+  await search.fill('JWT encrypt')
+  await expect(dialog.getByRole('option', { name: /JWE encryptor/ })).toBeVisible()
+  await search.fill('JWT decrypt')
+  await expect(dialog.getByRole('option', { name: /JWE decryptor/ })).toBeVisible()
+  await search.fill('')
+
+  const results = dialog.locator('.command-results')
+  const metrics = await results.evaluate((node) => ({
+    clientHeight: node.clientHeight,
+    scrollHeight: node.scrollHeight,
+    overflowY: getComputedStyle(node).overflowY,
+    resultsFit: [...node.querySelectorAll('button')].every((button) => button.scrollWidth <= button.clientWidth),
+  }))
+  expect(metrics.overflowY).toBe('auto')
+  expect(metrics.scrollHeight).toBeGreaterThan(metrics.clientHeight)
+  expect(metrics.resultsFit).toBe(true)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false)
+})
+
 test('static pages share keyboard search and complete footer navigation without breadcrumbs', async ({ page }) => {
   await page.goto('/learning')
   await page.getByRole('button', { name: 'Search JStack tools and pages' }).click()

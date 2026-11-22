@@ -630,7 +630,7 @@ function App() {
   const toolSearchTerms = toolSearch.trim().toLowerCase().split(/\s+/).filter(Boolean)
   const matchingTools = toolSearchTerms.length
     ? Object.entries(toolRoutes).filter(([slug, route]) => {
-      const searchableText = `${toolDisplayNames[slug]} ${route.heading} ${route.description} ${slug}`.toLowerCase()
+      const searchableText = `${toolDisplayNames[slug]} ${route.heading} ${route.description} ${slug} ${slug.startsWith('jwe-') ? 'jwt' : ''}`.toLowerCase()
       return toolSearchTerms.every((term) => searchableText.includes(term))
     })
     : []
@@ -1127,7 +1127,7 @@ function App() {
   const commandResults = commandCatalog
     .filter((item, index, entries) => entries.findIndex((candidate) => candidate.slug === item.slug && item.slug || candidate.href === item.href && item.href) === index)
     .filter((item) => {
-      const searchableText = `${item.title} ${item.description} ${item.group}`.toLowerCase()
+      const searchableText = `${item.title} ${item.description} ${item.group} ${item.slug ?? ''} ${item.slug?.startsWith('jwe-') ? 'jwt' : ''}`.toLowerCase()
       return commandSearchTerms.every((term) => searchableText.includes(term))
     })
   const runCommand = (item: CommandItem) => {

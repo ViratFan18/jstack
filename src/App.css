@@ -2982,7 +2982,7 @@ body,.app-shell { background:var(--page);color:var(--ink); }
   width: 100%;
   min-height: 58px;
   display: grid;
-  grid-template-columns: 38px 1fr auto;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   padding: 7px 9px;
@@ -3008,9 +3008,9 @@ body,.app-shell { background:var(--page);color:var(--ink); }
   background: var(--surface-alt);
   color: var(--green);
 }
-.command-results button > span:nth-child(2) { display: grid; gap: 3px; }
+.command-results button > span:nth-child(2) { min-width: 0; display: grid; gap: 3px; }
 .command-results b { font-size: 13px; }
-.command-results small { color: var(--muted); font-size: 11px; }
+.command-results small { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
 .command-enter { color: var(--subtle); font: 10px var(--mono); }
 .command-footer {
   min-height: 38px;
