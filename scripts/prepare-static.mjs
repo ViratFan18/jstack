@@ -271,7 +271,7 @@ for (const tool of toolPages) {
   <main>
     <h1>${escapeHtml(tool.heading)}</h1>
     <p class="lead">${escapeHtml(tool.description)}</p>
-    <p><a class="notice" href="/app/${tool.slug}">${escapeHtml(tool.action)} in the JStack browser tool</a></p>
+    <p class="tool-cta-wrap"><a class="tool-cta" href="/app/${tool.slug}"><span>Open ${escapeHtml(tool.name)}</span><svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a><span class="tool-cta-note">Opens the interactive tool. Your input stays in your browser.</span></p>
 ${sections}
     <article><h2>Related JStack tools</h2><nav class="tool-links" aria-label="Related developer tools">
 ${relatedLinks}

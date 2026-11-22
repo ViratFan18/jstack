@@ -40,6 +40,44 @@ test('public routes render their own page and fit the viewport', async ({ page }
   }
 })
 
+test('public tool pages feature mobile-friendly buttons to open their interactive tools', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 })
+  const toolPages = [
+    { slug: 'jwt-decoder', name: 'JWT decoder' },
+    { slug: 'jwt-encoder', name: 'JWT encoder and signer' },
+    { slug: 'jwt-verifier', name: 'JWT signature verifier' },
+    { slug: 'jwe-encryptor', name: 'JWE encryptor' },
+    { slug: 'jwe-decryptor', name: 'JWE decryptor' },
+    { slug: 'jwt-key-generator', name: 'JWT key generator' },
+    { slug: 'json-formatter', name: 'JSON formatter' },
+    { slug: 'json-minifier', name: 'JSON minifier' },
+    { slug: 'json-validator', name: 'JSON syntax validator' },
+    { slug: 'json-to-java', name: 'JSON to Java model generator' },
+    { slug: 'base64-converter', name: 'Base64 text converter' },
+    { slug: 'base128-converter', name: 'JStack Base128 converter' },
+  ]
+
+  for (const { slug, name } of toolPages) {
+    await page.goto(`/${slug}`)
+    const action = page.getByRole('link', { name: `Open ${name}` })
+    await expect(action).toBeVisible()
+    await expect(action).toHaveAttribute('href', `/app/${slug}`)
+    await expect(action).toHaveCSS('display', 'flex')
+    await expect(action).toHaveCSS('min-height', '48px')
+    const fitsViewport = await action.evaluate((element) => {
+      const bounds = element.getBoundingClientRect()
+      return bounds.left >= 0 && bounds.right <= document.documentElement.clientWidth
+    })
+    expect(fitsViewport, `CTA for /${slug} fits a 320px viewport`).toBe(true)
+
+    if (slug === 'jwt-decoder') {
+      await action.click()
+      await expect(page).toHaveURL(/\/app\/jwt-decoder$/)
+      await expect(page.getByRole('heading', { name: 'JWT Decoder' })).toBeVisible()
+    }
+  }
+})
+
 test('homepage launches tools directly and workspace pages omit visible breadcrumbs', async ({ page }) => {
   await page.goto('/')
   await expect(page.locator('.home-tool-card')).toHaveCount(12)
