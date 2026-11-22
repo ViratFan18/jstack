@@ -1,5 +1,5 @@
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const outputDirectory = fileURLToPath(new URL('../dist/', import.meta.url))
@@ -399,15 +399,15 @@ for (const file of htmlFiles) {
 
 const workspaceHtml = await readFile(join(outputDirectory, 'workspace.html'), 'utf8')
 for (const { slug } of toolPages) {
-  const routeDirectory = join(outputDirectory, 'app', slug)
-  await mkdir(routeDirectory, { recursive: true })
-  await writeFile(join(routeDirectory, 'index.html'), workspaceHtml)
+  const routeFile = join(outputDirectory, 'app', `${slug}.html`)
+  await mkdir(dirname(routeFile), { recursive: true })
+  await writeFile(routeFile, workspaceHtml)
 }
 
 for (const { file, path } of articlePages) {
-  const routeDirectory = join(outputDirectory, path.slice(1))
-  await mkdir(routeDirectory, { recursive: true })
-  await writeFile(join(routeDirectory, 'index.html'), await readFile(join(outputDirectory, file), 'utf8'))
+  const routeFile = join(outputDirectory, `${path.slice(1)}.html`)
+  await mkdir(dirname(routeFile), { recursive: true })
+  await writeFile(routeFile, await readFile(join(outputDirectory, file), 'utf8'))
 }
 
 const robotsPath = join(outputDirectory, 'robots.txt')

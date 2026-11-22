@@ -48,7 +48,7 @@ function addBuiltWorkspaceRouteFallback(server: PreviewServer) {
     const workspaceRoute = pathname.match(/^\/app\/([^/]+)$/)
     if (!workspaceRoute || !toolPageNames.has(workspaceRoute[1])) return next()
 
-    const routeHtml = resolve(process.cwd(), 'dist', 'app', workspaceRoute[1], 'index.html')
+    const routeHtml = resolve(process.cwd(), 'dist', 'app', `${workspaceRoute[1]}.html`)
     if (!existsSync(routeHtml)) return next()
 
     response.statusCode = 200
@@ -102,7 +102,7 @@ function addStaticPageRoutes(server: ViteDevServer | PreviewServer, useBuiltRout
     const articleFileName = articlePageNames.get(pageName)
     if (articleFileName) {
       if (useBuiltRoutes) {
-        const generatedPage = resolve(process.cwd(), 'dist', pageName, 'index.html')
+        const generatedPage = resolve(process.cwd(), 'dist', `${pageName}.html`)
         if (existsSync(generatedPage)) {
           response.statusCode = 200
           response.setHeader('Content-Type', 'text/html; charset=utf-8')

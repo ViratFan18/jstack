@@ -186,7 +186,7 @@ test('production deployment artifacts revalidate documents and retain hashed ass
     'jwt-key-generator', 'json-formatter', 'json-minifier', 'json-validator',
     'json-to-java', 'base64-converter', 'base128-converter',
   ]) {
-    const routeHtml = await readFile(new URL(`../dist/app/${slug}/index.html`, import.meta.url), 'utf8')
+    const routeHtml = await readFile(new URL(`../dist/app/${slug}.html`, import.meta.url), 'utf8')
     expect(routeHtml, `/app/${slug} has a generated route document`).toContain('<div id="root"></div>')
     expect(routeHtml, `/app/${slug} is excluded from indexing`).toContain('<meta name="robots" content="noindex, follow"')
     expect(routeHtml, `/app/${slug} does not load ads`).not.toContain('adsbygoogle.js')
@@ -197,7 +197,7 @@ test('production deployment artifacts revalidate documents and retain hashed ass
     ['json-to-java-records', 'From a JSON example to a Java model'],
     ['base64-vs-base128', 'Base64, Base64URL, and JStack Base128'],
   ]) {
-    const routeHtml = await readFile(new URL(`../dist/blog/${slug}/index.html`, import.meta.url), 'utf8')
+    const routeHtml = await readFile(new URL(`../dist/blog/${slug}.html`, import.meta.url), 'utf8')
     expect(routeHtml, `/blog/${slug} has a generated route document`).toContain(`<h1>${heading}</h1>`)
     expect(routeHtml, `/blog/${slug} has its canonical URL`).toContain(`href="https://jstack.pages.dev/blog/${slug}"`)
   }
